@@ -1,0 +1,28 @@
+{
+  "name": "swagger-sentinel",
+  "version": "1.0.0",
+  "description": "Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist",
+  "main": "src/index.js",
+  "bin": {
+    "swagger-sentinel": "src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "validate": "node src/cli.js validate",
+    "generate": "node src/cli.js generate"
+  },
+  "keywords": ["openapi", "swagger", "validator", "api", "testing", "vitest", "spec-first"],
+  "author": "Mustafa Sercan Sak",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "js-yaml": "^4.1.0",
+    "chalk": "^4.1.2",
+    "chokidar": "^3.6.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

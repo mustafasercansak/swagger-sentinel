@@ -1,0 +1,189 @@
+openapi: 3.0.3
+info:
+  title: Sample Pet Store API
+  version: 1.0.0
+  contact:
+    name: API Team
+    email: api@example.com
+  description: A sample API for testing swagger-sentinel
+
+servers:
+  - url: http://localhost:3000/api/v1
+
+paths:
+  /api/v1/pets:
+    get:
+      operationId: listPets
+      summary: List all pets
+      tags:
+        - Pets
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of pets to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: cursor
+          in: query
+          description: Pagination cursor
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of pets
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pet'
+                  total:
+                    type: integer
+                    example: 42
+
+    post:
+      operationId: createPet
+      summary: Create a new pet
+      tags:
+        - Pets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - species
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                  example: "Buddy"
+                species:
+                  type: string
+                  enum: [dog, cat, bird, fish]
+                  example: "dog"
+                age:
+                  type: integer
+                  minimum: 0
+                  maximum: 50
+      responses:
+        '201':
+          description: Pet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/pets/{petId}:
+    get:
+      operationId: getPet
+      summary: Get a pet by ID
+      tags:
+        - Pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The pet's unique identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      operationId: deletePet
+      summary: Delete a pet
+      tags:
+        - Pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The pet's unique identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Pet deleted
+
+components:
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+        - species
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        name:
+          type: string
+          example: "Buddy"
+        species:
+          type: string
+          enum: [dog, cat, bird, fish]
+          example: "dog"
+        age:
+          type: integer
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: "NOT_FOUND"
+        message:
+          type: string
+          example: "Resource not found"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Pets
+    description: Pet management operations
