@@ -1,6 +1,6 @@
 # The 130-Point OpenAPI Validation Checklist
 
-62 checks are automated in swagger-sentinel (marked ✅). 68 require human judgment (marked 👁).
+83 checks are automated in swagger-sentinel (marked ✅). 47 require human judgment (marked 👁).
 
 ## Structure & Metadata (12 checks)
 
@@ -16,8 +16,8 @@
 | 8 | S08 | Title is descriptive | ✅ | Warning |
 | 9 | S09 | External docs link provided | ✅ | Suggestion |
 | 10 | S10 | Components exist when $ref used | ✅ | Error |
-| 11 | — | API categorization is appropriate | 👁 | — |
-| 12 | — | Terms of service for public APIs | 👁 | — |
+| 11 | S11 | Terms of service URL specified | ✅ | Suggestion |
+| 12 | — | API categorization is appropriate | 👁 | — |
 
 ## Path Design (18 checks)
 
@@ -32,7 +32,9 @@
 | 19 | P21 | Consistent prefix | ✅ | Suggestion |
 | 20 | P22 | No empty segments | ✅ | Error |
 | 21 | P23 | Path params documented | ✅ | Error |
-| 22-30 | — | Resource abstraction, naming semantics, HATEOAS links, etc. | 👁 | — |
+| 22 | P24 | No HTTP verb names in path segments | ✅ | Warning |
+| 23 | P25 | Path param names use consistent casing | ✅ | Suggestion |
+| 24-30 | — | Resource abstraction, naming semantics, HATEOAS links, etc. | 👁 | — |
 
 ## Operations (22 checks)
 
@@ -47,7 +49,10 @@
 | 37 | O36 | Operations have summary/description | ✅ | Warning |
 | 38 | O37 | PUT/PATCH have request body | ✅ | Warning |
 | 39 | O38 | Body preferred over query for mutations | ✅ | Suggestion |
-| 40-52 | — | Idempotency, caching headers, ETags, CORS preflight, etc. | 👁 | — |
+| 40 | O39 | HEAD defined wherever GET is defined | ✅ | Suggestion |
+| 41 | O40 | PATCH uses merge-patch or json-patch content type | ✅ | Suggestion |
+| 42 | O41 | operationIds don't redundantly prefix the HTTP method | ✅ | Suggestion |
+| 43-52 | — | Idempotency, CORS preflight, rate-limit retry headers, etc. | 👁 | — |
 
 ## Request Validation (16 checks)
 
@@ -60,7 +65,9 @@
 | 57 | R54 | Content type specified | ✅ | Error |
 | 58 | R55 | Enums use consistent casing | ✅ | Warning |
 | 59 | R56 | Parameters have descriptions | ✅ | Warning |
-| 60-68 | — | Pattern validation, date formats, file size limits, etc. | 👁 | — |
+| 60 | R57 | Fields with semantic names carry matching format | ✅ | Suggestion |
+| 61 | R58 | Binary/file fields use multipart/form-data | ✅ | Warning |
+| 62-68 | — | Complex pattern validation, custom validators, etc. | 👁 | — |
 
 ## Response Design (20 checks)
 
@@ -73,7 +80,10 @@
 | 73 | R74 | Success responses have content | ✅ | Warning |
 | 74 | R75 | 429 has rate-limit headers | ✅ | Warning |
 | 75 | R76 | Schemas define required | ✅ | Warning |
-| 76-88 | — | Total count on lists, link headers, content negotiation, etc. | 👁 | — |
+| 76 | R77 | 201 Created includes Location header | ✅ | Suggestion |
+| 77 | R78 | List responses include total count | ✅ | Suggestion |
+| 78 | R79 | Single-resource GETs define ETag or Last-Modified | ✅ | Suggestion |
+| 79-88 | — | Content negotiation, link headers, partial content, etc. | 👁 | — |
 
 ## Security (14 checks)
 
@@ -82,8 +92,14 @@
 | 89 | SEC90 | Security schemes defined | ✅ | Warning |
 | 90 | SEC91 | No API keys in query | ✅ | Error |
 | 91 | SEC93 | Sensitive fields writeOnly | ✅ | Warning |
-| 92 | SEC94 | Security applied | ✅ | Suggestion |
-| 93-102 | — | CORS, HTTPS enforcement, OAuth scopes, token expiry, etc. | 👁 | — |
+| 92 | SEC94 | Security applied globally or per-operation | ✅ | Suggestion |
+| 93 | SEC95 | Production servers use HTTPS | ✅ | Error |
+| 94 | SEC96 | OAuth2 flows define scopes | ✅ | Warning |
+| 95 | SEC97 | Secured operations define 401 response | ✅ | Warning |
+| 96 | SEC98 | Secured operations define 403 response | ✅ | Suggestion |
+| 97 | SEC99 | No credentials embedded in server URLs | ✅ | Error |
+| 98 | SEC100 | HTTP Basic auth is not used | ✅ | Warning |
+| 99-102 | — | CORS headers, token expiry, mTLS, etc. | 👁 | — |
 
 ## Documentation (10 checks)
 
@@ -93,8 +109,10 @@
 | 104 | DOC112 | Schemas have examples | ✅ | Warning |
 | 105 | DOC115 | Deprecated ops have sunset date | ✅ | Warning |
 | 106 | DOC116 | Tags have descriptions | ✅ | Suggestion |
-| 107-112 | — | Changelog, migration guide, SDK examples, webhook docs, etc. | 👁 | — |
+| 107 | DOC117 | Operations include at least one response example | ✅ | Suggestion |
+| 108 | DOC118 | Request bodies include an example | ✅ | Suggestion |
+| 109-112 | — | Changelog, migration guide, webhook docs, etc. | 👁 | — |
 
 ---
 
-Total: **130 checks** | Automated: **62** | Manual: **68**
+Total: **130 checks** | Automated: **83** | Manual: **47**

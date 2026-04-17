@@ -1,7 +1,7 @@
 const { getAllOperations, resolveRef } = require('../utils/loader');
 
 /**
- * Category: Response Design (20 checks, 8 automated)
+ * Category: Response Design (20 checks, 10 automated)
  */
 function validateResponses(spec) {
   const results = [];
@@ -133,6 +133,76 @@ function validateResponses(spec) {
     passed: schemasNoRequired.length === 0,
     message: 'All schemas define required fields',
     details: schemasNoRequired.length > 0 ? `No required: ${schemasNoRequired.join(', ')}` : null,
+  });
+
+  // R77: 201 Created responses include a Location header
+  const created201NoLocation = [];
+  for (const op of ops) {
+    const resp201 = (op.operation.responses || {})['201'];
+    if (resp201) {
+      const headers = resp201.headers || {};
+      const hasLocation = Object.keys(headers).some(h => h.toLowerCase() === 'location');
+      if (!hasLocation) {
+        created201NoLocation.push(`${op.method} ${op.path}`);
+      }
+    }
+  }
+  results.push({
+    id: 'R77', category: 'Response', severity: 'suggestion',
+    passed: created201NoLocation.length === 0,
+    message: '201 Created responses include a Location header',
+    details: created201NoLocation.length > 0 ? `Missing Location: ${created201NoLocation.join(', ')}` : null,
+  });
+
+  // R78: List GET responses have total count (x-total-count header or wrapper object)
+  const listNoCount = [];
+  for (const op of ops) {
+    if (op.method !== 'GET') continue;
+    const resp200 = (op.operation.responses || {})['200'];
+    if (!resp200) continue;
+    const content = resp200.content || {};
+    for (const mediaType of Object.values(content)) {
+      const schema = mediaType.schema || {};
+      if (schema.type === 'array') {
+        const headers = resp200.headers || {};
+        const hasTotalCount = Object.keys(headers).some(h =>
+          h.toLowerCase() === 'x-total-count' || h.toLowerCase() === 'x-pagination-total'
+        );
+        const hasWrapperCount = schema.properties?.total !== undefined || schema.properties?.count !== undefined;
+        if (!hasTotalCount && !hasWrapperCount) {
+          listNoCount.push(`${op.method} ${op.path}`);
+        }
+      }
+    }
+  }
+  results.push({
+    id: 'R78', category: 'Response', severity: 'suggestion',
+    passed: listNoCount.length === 0,
+    message: 'List responses include total count (header or wrapper)',
+    details: listNoCount.length > 0 ? `No total count: ${listNoCount.join(', ')}` : null,
+  });
+
+  // R79: GET responses for single resources define ETag or Last-Modified header
+  const getNoEtag = [];
+  for (const op of ops) {
+    if (op.method !== 'GET') continue;
+    const pathHasParam = op.path.endsWith('}');
+    if (!pathHasParam) continue;
+    const resp200 = (op.operation.responses || {})['200'];
+    if (!resp200) continue;
+    const headers = resp200.headers || {};
+    const hasEtag = Object.keys(headers).some(h =>
+      h.toLowerCase() === 'etag' || h.toLowerCase() === 'last-modified'
+    );
+    if (!hasEtag) {
+      getNoEtag.push(`${op.method} ${op.path}`);
+    }
+  }
+  results.push({
+    id: 'R79', category: 'Response', severity: 'suggestion',
+    passed: getNoEtag.length === 0,
+    message: 'Single-resource GET responses define ETag or Last-Modified',
+    details: getNoEtag.length > 0 ? `Missing cache headers: ${getNoEtag.join(', ')}` : null,
   });
 
   return results;

@@ -1,5 +1,5 @@
 /**
- * Category: Structure & Metadata (12 checks, 10 automated)
+ * Category: Structure & Metadata (12 checks, 11 automated)
  */
 function validateStructure(spec) {
   const results = [];
@@ -71,6 +71,14 @@ function validateStructure(spec) {
     id: 'S10', category: 'Structure', severity: 'error',
     passed: !hasRefs || !!spec.components,
     message: 'Components section exists when $ref is used',
+  });
+
+  // S11: Terms of service specified (required for public APIs)
+  results.push({
+    id: 'S11', category: 'Structure', severity: 'suggestion',
+    passed: !!info.termsOfService,
+    message: 'Terms of service URL is specified',
+    details: !info.termsOfService ? 'Add info.termsOfService for public APIs' : null,
   });
 
   return results;

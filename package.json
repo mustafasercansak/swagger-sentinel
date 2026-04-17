@@ -7,7 +7,7 @@
     "swagger-sentinel": "src/cli.js"
   },
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "test": "node --test \"tests/**/*.test.js\"",
     "validate": "node src/cli.js validate",
     "generate": "node src/cli.js generate"
   },

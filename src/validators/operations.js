@@ -1,7 +1,7 @@
 const { getAllOperations } = require('../utils/loader');
 
 /**
- * Category: Operations (22 checks, 12 automated)
+ * Category: Operations (22 checks, 13 automated)
  */
 function validateOperations(spec) {
   const results = [];
@@ -119,6 +119,53 @@ function validateOperations(spec) {
     passed: postWithQuery.length === 0,
     message: 'POST/PUT operations prefer body over query parameters',
     details: postWithQuery.length > 0 ? `Mixed: ${postWithQuery.map(o => o.path).join(', ')}` : null,
+  });
+
+  // O39: HEAD method defined wherever GET is defined
+  const getPathsWithoutHead = [];
+  for (const [pathStr, pathItem] of Object.entries(spec.paths || {})) {
+    if (pathItem.get && !pathItem.head) {
+      getPathsWithoutHead.push(pathStr);
+    }
+  }
+  results.push({
+    id: 'O39', category: 'Operations', severity: 'suggestion',
+    passed: getPathsWithoutHead.length === 0,
+    message: 'HEAD method defined wherever GET is defined',
+    details: getPathsWithoutHead.length > 0 ? `Missing HEAD: ${getPathsWithoutHead.slice(0, 3).join(', ')}${getPathsWithoutHead.length > 3 ? ` (+${getPathsWithoutHead.length - 3} more)` : ''}` : null,
+  });
+
+  // O40: PATCH uses application/merge-patch+json or application/json-patch+json
+  const patchOps = ops.filter(o => o.method === 'PATCH');
+  const patchWrongType = patchOps.filter(o => {
+    const content = o.operation.requestBody?.content || {};
+    const types = Object.keys(content);
+    if (types.length === 0) return false;
+    return !types.some(t => ['application/merge-patch+json', 'application/json-patch+json', 'application/json'].includes(t));
+  });
+  results.push({
+    id: 'O40', category: 'Operations', severity: 'suggestion',
+    passed: patchWrongType.length === 0,
+    message: 'PATCH operations use JSON merge-patch or JSON patch content type',
+    details: patchWrongType.length > 0 ? `Unexpected content type: ${patchWrongType.map(o => o.path).join(', ')}` : null,
+  });
+
+  // O41: No verb names in operationIds that duplicate HTTP method
+  const verbInId = [];
+  const httpVerbs = ['get', 'post', 'put', 'patch', 'delete', 'list', 'fetch', 'retrieve', 'create', 'update', 'remove'];
+  for (const op of ops) {
+    if (!op.operation.operationId) continue;
+    const id = op.operation.operationId.toLowerCase();
+    const method = op.method.toLowerCase();
+    if (id.startsWith(method) && method !== 'get') {
+      verbInId.push(`${op.method} ${op.path} → "${op.operation.operationId}"`);
+    }
+  }
+  results.push({
+    id: 'O41', category: 'Operations', severity: 'suggestion',
+    passed: verbInId.length === 0,
+    message: 'operationIds do not redundantly prefix the HTTP method',
+    details: verbInId.length > 0 ? `Redundant prefix: ${verbInId.slice(0, 3).join('; ')}` : null,
   });
 
   return results;

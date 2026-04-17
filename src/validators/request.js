@@ -3,6 +3,16 @@ const { getAllOperations, resolveRef } = require('../utils/loader');
 /**
  * Category: Request Validation (16 checks, 10 automated)
  */
+// field name fragments → expected format value
+const FORMAT_HINTS = [
+  { fragments: ['email'], format: 'email' },
+  { fragments: ['url', 'uri', 'href', 'link', 'website'], format: 'uri' },
+  { fragments: ['date_of_birth', 'dob', 'birth_date', 'birthdate'], format: 'date' },
+  { fragments: ['created_at', 'updated_at', 'deleted_at', 'timestamp'], format: 'date-time' },
+  { fragments: ['uuid', '_id'], format: 'uuid' },
+  { fragments: ['ipaddress', 'ip_address', 'ipv4', 'ipv6'], format: 'ipv4' },
+  { fragments: ['hostname'], format: 'hostname' },
+];
 function validateRequests(spec) {
   const results = [];
   const ops = getAllOperations(spec);
@@ -149,6 +159,76 @@ function validateRequests(spec) {
     passed: paramNoDesc.length === 0,
     message: 'All parameters have descriptions',
     details: paramNoDesc.length > 0 ? `Missing: ${paramNoDesc.slice(0, 3).join('; ')}${paramNoDesc.length > 3 ? ` (+${paramNoDesc.length - 3} more)` : ''}` : null,
+  });
+
+  // R57: Fields whose names imply a format have the matching format keyword
+  const formatMismatches = [];
+
+  function checkFormatHints(propName, propSchema, loc) {
+    if (propSchema.type !== 'string' || propSchema.format || propSchema.enum) return;
+    const lower = propName.toLowerCase().replace(/-/g, '_');
+    for (const hint of FORMAT_HINTS) {
+      if (hint.fragments.some(f => lower.includes(f))) {
+        formatMismatches.push(`${loc} (expected format: ${hint.format})`);
+        break;
+      }
+    }
+  }
+
+  for (const op of ops) {
+    const params = (op.operation.parameters || []).concat(op.pathItem.parameters || []);
+    for (const param of params) {
+      checkFormatHints(param.name, param.schema || {}, `${op.method} ${op.path} → ${param.name}`);
+    }
+    if (op.operation.requestBody) {
+      const content = op.operation.requestBody.content || {};
+      for (const mediaType of Object.values(content)) {
+        let schema = mediaType.schema || {};
+        if (schema.$ref) schema = resolveRef(spec, schema.$ref) || schema;
+        if (schema.properties) {
+          for (const [propName, propSchema] of Object.entries(schema.properties)) {
+            checkFormatHints(propName, propSchema, `${op.method} ${op.path} body.${propName}`);
+          }
+        }
+      }
+    }
+  }
+  // Also check component schemas
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
+    if (schema.properties) {
+      for (const [propName, propSchema] of Object.entries(schema.properties)) {
+        checkFormatHints(propName, propSchema, `${schemaName}.${propName}`);
+      }
+    }
+  }
+
+  results.push({
+    id: 'R57', category: 'Request', severity: 'suggestion',
+    passed: formatMismatches.length === 0,
+    message: 'Fields with semantic names carry the matching format keyword',
+    details: formatMismatches.length > 0 ? `Missing format: ${formatMismatches.slice(0, 3).join('; ')}${formatMismatches.length > 3 ? ` (+${formatMismatches.length - 3} more)` : ''}` : null,
+  });
+
+  // R58: File upload fields (binary/byte) are in multipart/form-data requests
+  const binaryNotMultipart = [];
+  for (const op of ops) {
+    if (!op.operation.requestBody) continue;
+    const content = op.operation.requestBody.content || {};
+    for (const [mediaType, mtObj] of Object.entries(content)) {
+      if (mediaType === 'multipart/form-data') continue;
+      const schema = mtObj.schema || {};
+      const hasBinary = schema.format === 'binary' || schema.format === 'byte' ||
+        (schema.properties && Object.values(schema.properties).some(p => p.format === 'binary' || p.format === 'byte'));
+      if (hasBinary) {
+        binaryNotMultipart.push(`${op.method} ${op.path} (${mediaType})`);
+      }
+    }
+  }
+  results.push({
+    id: 'R58', category: 'Request', severity: 'warning',
+    passed: binaryNotMultipart.length === 0,
+    message: 'Binary/file upload fields use multipart/form-data',
+    details: binaryNotMultipart.length > 0 ? `Binary outside multipart: ${binaryNotMultipart.join(', ')}` : null,
   });
 
   return results;

@@ -1,7 +1,7 @@
 const { getAllOperations } = require('../utils/loader');
 
 /**
- * Category: Documentation (10 checks, 4 automated)
+ * Category: Documentation (10 checks, 6 automated)
  */
 function validateDocumentation(spec) {
   const results = [];
@@ -69,6 +69,64 @@ function validateDocumentation(spec) {
     passed: tagsNoDesc.length === 0,
     message: 'Tags have descriptions',
     details: tagsNoDesc.length > 0 ? `No description: ${tagsNoDesc.join(', ')}` : null,
+  });
+
+  // DOC117: Operations include at least one response example
+  const noExamples = [];
+  for (const op of ops) {
+    let hasExample = false;
+    for (const resp of Object.values(op.operation.responses || {})) {
+      const content = resp.content || {};
+      for (const mt of Object.values(content)) {
+        if (mt.example !== undefined || mt.examples !== undefined) {
+          hasExample = true;
+          break;
+        }
+        const schema = mt.schema || {};
+        if (schema.example !== undefined) {
+          hasExample = true;
+          break;
+        }
+      }
+      if (hasExample) break;
+    }
+    if (!hasExample && Object.keys(op.operation.responses || {}).length > 0) {
+      noExamples.push(`${op.method} ${op.path}`);
+    }
+  }
+  results.push({
+    id: 'DOC117', category: 'Documentation', severity: 'suggestion',
+    passed: noExamples.length === 0,
+    message: 'Operations include at least one response example',
+    details: noExamples.length > 0 ? `No examples: ${noExamples.slice(0, 3).join(', ')}${noExamples.length > 3 ? ` (+${noExamples.length - 3} more)` : ''}` : null,
+  });
+
+  // DOC118: Request bodies include an example
+  const bodyNoExamples = [];
+  for (const op of ops) {
+    if (!op.operation.requestBody) continue;
+    const content = op.operation.requestBody.content || {};
+    let hasExample = false;
+    for (const mt of Object.values(content)) {
+      if (mt.example !== undefined || mt.examples !== undefined) {
+        hasExample = true;
+        break;
+      }
+      const schema = mt.schema || {};
+      if (schema.example !== undefined) {
+        hasExample = true;
+        break;
+      }
+    }
+    if (!hasExample) {
+      bodyNoExamples.push(`${op.method} ${op.path}`);
+    }
+  }
+  results.push({
+    id: 'DOC118', category: 'Documentation', severity: 'suggestion',
+    passed: bodyNoExamples.length === 0,
+    message: 'Request bodies include an example',
+    details: bodyNoExamples.length > 0 ? `No body example: ${bodyNoExamples.slice(0, 3).join(', ')}${bodyNoExamples.length > 3 ? ` (+${bodyNoExamples.length - 3} more)` : ''}` : null,
   });
 
   return results;

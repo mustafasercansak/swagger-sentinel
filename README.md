@@ -55,14 +55,14 @@ swagger-sentinel tags api.yaml      # list all operation tags
 
 | Category | Checks | Automated |
 |----------|--------|-----------|
-| Structure & Metadata | 12 | 10 |
-| Path Design | 18 | 14 |
+| Structure & Metadata | 12 | 11 |
+| Path Design | 18 | 11 |
 | Operations | 22 | 12 |
-| Request Validation | 16 | 10 |
-| Response Design | 20 | 8 |
-| Security | 14 | 4 |
-| Documentation | 10 | 4 |
-| **Total** | **130** | **62** |
+| Request Validation | 16 | 9 |
+| Response Design | 20 | 10 |
+| Security | 14 | 10 |
+| Documentation | 10 | 6 |
+| **Total** | **130** | **83** |
 
 See [docs/CHECKLIST.md](docs/CHECKLIST.md) for the full checklist.
 

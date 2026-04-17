@@ -1,7 +1,7 @@
 const { getAllOperations } = require('../utils/loader');
 
 /**
- * Category: Path Design (18 checks, 14 automated)
+ * Category: Path Design (18 checks, 11 automated)
  */
 function validatePaths(spec) {
   const results = [];
@@ -120,6 +120,41 @@ function validatePaths(spec) {
     passed: undocumentedParams.length === 0,
     message: 'All path parameters are defined in parameters',
     details: undocumentedParams.length > 0 ? `Missing: ${undocumentedParams.slice(0, 3).join('; ')}` : null,
+  });
+
+  // P24: No HTTP verb names in static path segments
+  const verbsInPaths = [];
+  const httpVerbWords = ['get', 'post', 'put', 'patch', 'delete', 'create', 'update', 'remove', 'fetch', 'list', 'retrieve'];
+  for (const p of paths) {
+    const segments = p.split('/').filter(s => s && !s.startsWith('{'));
+    for (const seg of segments) {
+      if (httpVerbWords.includes(seg.toLowerCase())) {
+        verbsInPaths.push(`${p} (segment: "${seg}")`);
+        break;
+      }
+    }
+  }
+  results.push({
+    id: 'P24', category: 'Paths', severity: 'warning',
+    passed: verbsInPaths.length === 0,
+    message: 'Path segments do not contain HTTP verb names',
+    details: verbsInPaths.length > 0 ? `Verb in path: ${verbsInPaths.slice(0, 3).join(', ')}` : null,
+  });
+
+  // P25: Path parameter names use consistent casing (no mixing camelCase and snake_case)
+  const allParamNames = [];
+  for (const op of ops) {
+    const params = (op.operation.parameters || []).concat(op.pathItem.parameters || [])
+      .filter(p => p.in === 'path');
+    allParamNames.push(...params.map(p => p.name));
+  }
+  const hasCamel = allParamNames.some(n => /[a-z][A-Z]/.test(n));
+  const hasSnake = allParamNames.some(n => n.includes('_'));
+  results.push({
+    id: 'P25', category: 'Paths', severity: 'suggestion',
+    passed: !(hasCamel && hasSnake),
+    message: 'Path parameter names use consistent casing (not mixed camelCase and snake_case)',
+    details: hasCamel && hasSnake ? `Mixed casing detected in: ${[...new Set(allParamNames)].join(', ')}` : null,
   });
 
   return results;
