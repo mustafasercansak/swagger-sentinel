@@ -18,6 +18,10 @@
 | 10 | S10 | Components exist when $ref used | ✅ | Error |
 | 11 | S11 | Terms of service URL specified | ✅ | Suggestion |
 | 12 | — | API categorization is appropriate | 👁 | — |
+| 13 | — | API lifecycle state (Alpha/Beta/stable) documented | 👁 | — |
+| 14 | — | Deprecation and sunsetting policy defined | 👁 | — |
+| 15 | — | Breaking change notification policy clear | 👁 | — |
+
 
 ## Path Design (18 checks)
 
@@ -36,7 +40,14 @@
 | 23 | P25 | Path param names use consistent casing | ✅ | Suggestion |
 | 24 | P26 | No sensitive keywords in path params | ✅ | Warning |
 | 25 | P27 | No trailing dots in path segments | ✅ | Warning |
-| 26-30 | — | Resource abstraction, naming semantics, HATEOAS links, etc. | 👁 | — |
+| 26 | — | Resource abstraction level is appropriate | 👁 | — |
+| 27 | — | Resource naming is intuitive and domain-specific | 👁 | — |
+| 28 | — | No leakage of internal database IDs or structures | 👁 | — |
+| 29 | — | HATEOAS / Hypermedia links used where appropriate | 👁 | — |
+| 30 | — | Path parameters effectively replace query params for direct resource access | 👁 | — |
+| 31 | — | URL length is within reasonable limits (< 2000 chars) | 👁 | — |
+| 32 | — | Canonical URLs defined for duplicated resources | 👁 | — |
+
 
 ## Operations (22 checks)
 
@@ -57,7 +68,17 @@
 | 43 | O42 | GET operations do not have a requestBody | ✅ | Error |
 | 44 | O43 | 429 has rate-limit or retry headers | ✅ | Warning |
 | 45 | O44 | 202 Accepted has Location or Link header | ✅ | Suggestion |
-| 46-52 | — | Idempotency, CORS preflight, etc. | 👁 | — |
+| 46 | — | Idempotence is respected for PUT and DELETE | 👁 | — |
+| 47 | — | Safe methods (GET, HEAD) are strictly read-only | 👁 | — |
+| 48 | — | Bulk/Batch operations provide atomic guarantees or clear error mapping | 👁 | — |
+| 49 | — | Long-running operations provide status polling or callbacks | 👁 | — |
+| 50 | — | CORS preflight (OPTIONS) is correctly configured | 👁 | — |
+| 51 | — | Resource state transitions are logical and reflected in status codes | 👁 | — |
+| 52 | — | Method overrides (X-HTTP-Method-Override) are supported with caution | 👁 | — |
+| 53 | — | Health check endpoints (/health, /status) are provided | 👁 | — |
+| 54 | — | Monitoring/Metrics endpoints follow telemetry standards | 👁 | — |
+| 55 | — | Request correlation IDs (X-Request-ID) are supported | 👁 | — |
+
 
 ## Request Validation (16 checks)
 
@@ -75,7 +96,13 @@
 | 62 | R59 | ID parameters define format or pattern | ✅ | Warning |
 | 63 | R60 | Large body objects define maxProperties | ✅ | Suggestion |
 | 64 | R61 | No examples for sensitive fields | ✅ | Warning |
-| 65-68 | — | Complex pattern validation, custom validators, etc. | 👁 | — |
+| 65 | — | Complex regex patterns are thoroughly tested and documented | 👁 | — |
+| 66 | — | Custom business logic validation (beyond schema) documented | 👁 | — |
+| 67 | — | Request timeouts and client-side retry policies suggested | 👁 | — |
+| 68 | — | Large file upload strategy (multipart vs. chunked) appropriate | 👁 | — |
+| 69 | — | Input sanitization (XSS/SQLi) addressed in descriptions | 👁 | — |
+| 70 | — | Recursive objects have appropriate depth constraints | 👁 | — |
+
 
 ## Response Design (20 checks)
 
@@ -93,7 +120,20 @@
 | 78 | R79 | Single-resource GETs define ETag or Last-Modified | ✅ | Suggestion |
 | 79 | R80 | 406 Not Acceptable defined for multiple content types | ✅ | Suggestion |
 | 80 | R81 | 415 Unsupported Media Type for requestBody | ✅ | Suggestion |
-| 81-88 | — | Content negotiation, link headers, partial content, etc. | 👁 | — |
+| 81 | — | Content negotiation (Accept header) is strictly respected | 👁 | — |
+| 82 | — | Link headers provided for discoverability | 👁 | — |
+| 83 | — | Partial content (206) supported for large resource downloads | 👁 | — |
+| 84 | — | Compression (Gzip/Brotli) supported for text-rich responses | 👁 | — |
+| 85 | — | Cache-Control headers used effectively for static/slow data | 👁 | — |
+| 86 | — | Error messages are localized or support i18n where needed | 👁 | — |
+| 87 | — | Sensitive data is masked in logs and error responses | 👁 | — |
+| 88 | — | Consistent field selection (sparse fieldsets) supported | 👁 | — |
+| 89 | — | Filtering and sorting syntax follows a cross-API standard | 👁 | — |
+| 90 | — | Date/Time formats follow ISO 8601 strictly | 👁 | — |
+| 91 | — | Money/Currency handled with correct precision (no floats) | 👁 | — |
+| 92 | — | Polymorphism (oneOf/anyOf) used clearly with discriminators | 👁 | — |
+| 93 | — | Binary data returned with correct Content-Disposition | 👁 | — |
+
 
 ## Security (14 checks)
 
@@ -111,7 +151,12 @@
 | 98 | SEC100 | HTTP Basic auth is not used | ✅ | Warning |
 | 99 | SEC101 | No X- prefix for custom security headers | ✅ | Warning |
 | 100 | SEC102 | HTML responses include CSP header | ✅ | Suggestion |
-| 101-102 | — | CORS headers, token expiry, mTLS, etc. | 👁 | — |
+| 101 | — | CORS headers (Access-Control-Allow-Origin) restrictive by default | 👁 | — |
+| 102 | — | JWT/Token expiry and rotation policies clearly documented | 👁 | — |
+| 103 | — | mTLS (Mutual TLS) considered for high-security service-to-service | 👁 | — |
+| 104 | — | HSTS (Strict-Transport-Security) header recommended | 👁 | — |
+| 115 | — | API Key rotation mechanism exists | 👁 | — |
+
 
 ## Documentation (10 checks)
 
@@ -125,7 +170,13 @@
 | 108 | DOC118 | Request bodies include an example | ✅ | Suggestion |
 | 109 | DOC119 | API info has detailed description (>20 chars) | ✅ | Warning |
 | 110 | DOC120 | Schema properties have descriptions | ✅ | Warning |
-| 111-112 | — | Changelog, migration guide, webhook docs, etc. | 👁 | — |
+| 111 | — | Changelog or Release Notes maintained | 👁 | — |
+| 112 | — | Migration guide provided for breaking changes | 👁 | — |
+| 113 | — | Postman or Insomnia collections available | 👁 | — |
+| 114 | — | Tutorial/Quickstart guide exists for first-time developers | 👁 | — |
+| 115 | — | Sample code snippets provided in multiple languages | 👁 | — |
+| 116 | — | SDKs available for major platforms | 👁 | — |
+
 
 ---
 

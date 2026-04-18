@@ -58,13 +58,13 @@ swagger-sentinel tags api.yaml      # list all operation tags
 
 | Category | Checks | Automated |
 |----------|--------|-----------|
-| Structure & Metadata | 12 | 11 |
-| Path Design | 18 | 13 |
-| Operations | 22 | 15 |
-| Request Validation | 16 | 12 |
-| Response Design | 20 | 12 |
-| Security | 14 | 12 |
-| Documentation | 10 | 8 |
+| Structure & Metadata | 15 | 11 |
+| Path Design | 20 | 13 |
+| Operations | 25 | 15 |
+| Request Validation | 18 | 12 |
+| Response Design | 25 | 12 |
+| Security | 15 | 12 |
+| Documentation | 12 | 8 |
 | **Total** | **130** | **83** |
 
 See [docs/CHECKLIST.md](docs/CHECKLIST.md) for the full checklist.
@@ -82,14 +82,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-      - name: Install dependencies
-        run: npm install
-      - name: Build
-        run: npm run build
+        with:
+          node-version: 20
       - name: Validate
-        run: node dist/cli.js validate specs/api.yaml --strict
+        run: npx swagger-sentinel validate specs/api.yaml --strict
       - name: Generate Tests
-        run: node dist/cli.js generate specs/api.yaml --output tests/
+        run: npx swagger-sentinel generate specs/api.yaml --output tests/
       - name: Run Tests
         run: npx vitest run tests/
 ```
