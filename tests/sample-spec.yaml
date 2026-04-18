@@ -11,6 +11,9 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: https://example.com/terms
+  x-logo:
+    url: ../assets/logo.png
+    altText: Swagger Sentinel Logo
 
 externalDocs:
   description: Find out more about our API

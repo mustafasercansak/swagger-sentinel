@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" width="200" alt="Swagger Sentinel Logo">
+</p>
+
 # swagger-sentinel
 
 Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist.
