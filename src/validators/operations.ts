@@ -1,4 +1,4 @@
-import { getAllOperations } from '../utils/loader.js';
+import { getAllOperations, resolveRef } from '../utils/loader.js';
 import { OpenAPISpec, ValidationResult } from '../types.js';
 
 /**
@@ -181,7 +181,11 @@ export function validateOperations(spec: OpenAPISpec): ValidationResult[] {
     const responses = op.operation.responses || {};
     const resp429 = responses['429'];
     if (resp429) {
-      const headers = resp429.headers || {};
+      let headers = resp429.headers || {};
+      if (resp429.$ref) {
+        const refResp = resolveRef(spec, resp429.$ref);
+        if (refResp) headers = refResp.headers || {};
+      }
       const hasRateLimit = Object.keys(headers).some(h =>
         ['retry-after', 'x-ratelimit-limit', 'ratelimit-limit'].includes(h.toLowerCase())
       );
@@ -203,7 +207,11 @@ export function validateOperations(spec: OpenAPISpec): ValidationResult[] {
     const responses = op.operation.responses || {};
     const resp202 = responses['202'];
     if (resp202) {
-      const headers = resp202.headers || {};
+      let headers = resp202.headers || {};
+      if (resp202.$ref) {
+        const refResp = resolveRef(spec, resp202.$ref);
+        if (refResp) headers = refResp.headers || {};
+      }
       const hasLocation = Object.keys(headers).some(h =>
         ['location', 'link'].includes(h.toLowerCase())
       );

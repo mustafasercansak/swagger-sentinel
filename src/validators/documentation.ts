@@ -75,7 +75,12 @@ export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
   const noExamples: string[] = [];
   for (const op of ops) {
     let hasExample = false;
-    for (const resp of Object.values(op.operation.responses || {}) as any[]) {
+    const responses = op.operation.responses || {};
+    for (const [code, resp] of Object.entries(responses) as any[]) {
+      // 204 No Content shouldn't require an example
+      if (code === '204') continue;
+
+      // Check for inline example
       const content = resp.content || {};
       for (const mt of Object.values(content) as any[]) {
         if (mt.example !== undefined || mt.examples !== undefined) {
@@ -89,8 +94,25 @@ export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
         }
       }
       if (hasExample) break;
+
+      // Check for example in referenced component response
+      if (resp.$ref) {
+        const refName = resp.$ref.split('/').pop();
+        const componentResp = spec.components?.responses?.[refName];
+        if (componentResp) {
+          const cContent = componentResp.content || {};
+          for (const cMt of Object.values(cContent) as any[]) {
+            if (cMt.example !== undefined || cMt.examples !== undefined || (cMt.schema && cMt.schema.example !== undefined)) {
+              hasExample = true;
+              break;
+            }
+          }
+        }
+      }
+      if (hasExample) break;
     }
-    if (!hasExample && Object.keys(op.operation.responses || {}).length > 0) {
+
+    if (!hasExample && Object.keys(responses).filter(c => c !== '204').length > 0) {
       noExamples.push(`${op.method} ${op.path}`);
     }
   }
@@ -105,7 +127,18 @@ export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
   const bodyNoExamples: string[] = [];
   for (const op of ops) {
     if (!op.operation.requestBody) continue;
-    const content = op.operation.requestBody.content || {};
+    
+    let content = op.operation.requestBody.content || {};
+    
+    // Resolve $ref if present
+    if (op.operation.requestBody.$ref) {
+      const refName = op.operation.requestBody.$ref.split('/').pop();
+      const componentBody = spec.components?.requestBodies?.[refName];
+      if (componentBody) {
+        content = componentBody.content || {};
+      }
+    }
+
     let hasExample = false;
     for (const mt of Object.values(content) as any[]) {
       if (mt.example !== undefined || mt.examples !== undefined) {

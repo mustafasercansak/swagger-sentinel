@@ -106,8 +106,12 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
   for (const op of ops) {
     const resp429 = (op.operation.responses || {})['429'];
     if (resp429) {
-      const headers = resp429.headers || {};
-      const hasRateHeaders = ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
+      let headers = resp429.headers || {};
+      if (resp429.$ref) {
+        const refResp = resolveRef(spec, resp429.$ref);
+        if (refResp) headers = refResp.headers || {};
+      }
+      const hasRateHeaders = ['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
         .some(h => Object.keys(headers).some(k => k.toLowerCase() === h.toLowerCase()));
       if (!hasRateHeaders) {
         ops429.push(`${op.method} ${op.path}`);
@@ -140,7 +144,11 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
   for (const op of ops) {
     const resp201 = (op.operation.responses || {})['201'];
     if (resp201) {
-      const headers = resp201.headers || {};
+      let headers = resp201.headers || {};
+      if (resp201.$ref) {
+        const refResp = resolveRef(spec, resp201.$ref);
+        if (refResp) headers = refResp.headers || {};
+      }
       const hasLocation = Object.keys(headers).some(h => h.toLowerCase() === 'location');
       if (!hasLocation) {
         created201NoLocation.push(`${op.method} ${op.path}`);
@@ -164,7 +172,11 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
     for (const mediaType of Object.values(content) as any[]) {
       const schema = mediaType.schema || {};
       if (schema.type === 'array') {
-        const headers = resp200.headers || {};
+        let headers = resp200.headers || {};
+        if (resp200.$ref) {
+          const refResp = resolveRef(spec, resp200.$ref);
+          if (refResp) headers = refResp.headers || {};
+        }
         const hasTotalCount = Object.keys(headers).some(h =>
           h.toLowerCase() === 'x-total-count' || h.toLowerCase() === 'x-pagination-total'
         );
@@ -190,7 +202,12 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
     if (!pathHasParam) continue;
     const resp200 = (op.operation.responses || {})['200'];
     if (!resp200) continue;
-    const headers = resp200.headers || {};
+    
+    let headers = resp200.headers || {};
+    if (resp200.$ref) {
+      const refResp = resolveRef(spec, resp200.$ref);
+      if (refResp) headers = refResp.headers || {};
+    }
     const hasEtag = Object.keys(headers).some(h =>
       h.toLowerCase() === 'etag' || h.toLowerCase() === 'last-modified'
     );
