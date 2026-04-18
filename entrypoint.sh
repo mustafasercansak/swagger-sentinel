@@ -29,9 +29,8 @@ if [ -n "$GITHUB_OUTPUT" ]; then
   TMPJSON=$(mktemp /tmp/sentinelXXXXXX)
   TMPJS=$(mktemp /tmp/sentinelXXXXXX)
 
-  JSON_CMD="node /app/dist/cli.js validate $SPEC_PATH --format json"
-  [ -n "$CATEGORY" ] && JSON_CMD="$JSON_CMD --category $CATEGORY"
-  eval "$JSON_CMD" > "$TMPJSON" 2>/dev/null
+  # Avoid eval to prevent shell injection
+  node /app/dist/cli.js validate "$SPEC_PATH" --format json ${CATEGORY:+--category "$CATEGORY"} > "$TMPJSON" 2>/dev/null
   echo "JSON exit: $?"
 
   cat > "$TMPJS" << 'EOF'
@@ -61,11 +60,15 @@ EOF
 fi
 
 # ── Human-readable validation ─────────────────────────────────────────────────
-VALIDATE_CMD="node /app/dist/cli.js validate $SPEC_PATH"
-[ "$STRICT" = "true" ] && VALIDATE_CMD="$VALIDATE_CMD --strict"
-[ -n "$CATEGORY" ] && VALIDATE_CMD="$VALIDATE_CMD --category $CATEGORY"
+# Build argument list to avoid eval
+VAL_ARGS="validate \"$SPEC_PATH\""
+[ "$STRICT" = "true" ] && VAL_ARGS="$VAL_ARGS --strict"
+[ -n "$CATEGORY" ] && VAL_ARGS="$VAL_ARGS --category \"$CATEGORY\""
 
-eval "$VALIDATE_CMD"
+node /app/dist/cli.js validate "$SPEC_PATH" \
+  ${STRICT:+"--strict"} \
+  ${CATEGORY:+"--category" "$CATEGORY"}
+
 EXIT_CODE=$?
 echo "Validate exit: $EXIT_CODE"
 

@@ -9,7 +9,7 @@ export interface ValidationResult {
   details?: string | null;
 }
 
-export type ValidatorFunction = (spec: any) => ValidationResult[];
+export type ValidatorFunction = (spec: OpenAPISpec) => ValidationResult[];
 
 export interface OpenAPISpec {
   openapi: string;
