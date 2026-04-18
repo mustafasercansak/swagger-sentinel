@@ -29,13 +29,14 @@ if [ -n "$GITHUB_OUTPUT" ]; then
   TMPJSON=$(mktemp /tmp/sentinelXXXXXX)
   TMPJS=$(mktemp /tmp/sentinelXXXXXX)
 
-  JSON_CMD="node /app/src/cli.js validate $SPEC_PATH --format json"
+  JSON_CMD="node /app/dist/cli.js validate $SPEC_PATH --format json"
   [ -n "$CATEGORY" ] && JSON_CMD="$JSON_CMD --category $CATEGORY"
   eval "$JSON_CMD" > "$TMPJSON" 2>/dev/null
   echo "JSON exit: $?"
 
   cat > "$TMPJS" << 'EOF'
-const fs = require('fs');
+import fs from 'fs';
+import process from 'process';
 const [,, jsonFile, outputFile] = process.argv;
 try {
   const d = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
@@ -60,7 +61,7 @@ EOF
 fi
 
 # ── Human-readable validation ─────────────────────────────────────────────────
-VALIDATE_CMD="node /app/src/cli.js validate $SPEC_PATH"
+VALIDATE_CMD="node /app/dist/cli.js validate $SPEC_PATH"
 [ "$STRICT" = "true" ] && VALIDATE_CMD="$VALIDATE_CMD --strict"
 [ -n "$CATEGORY" ] && VALIDATE_CMD="$VALIDATE_CMD --category $CATEGORY"
 
@@ -69,6 +70,6 @@ EXIT_CODE=$?
 echo "Validate exit: $EXIT_CODE"
 
 [ "$GENERATE_TESTS" = "true" ] && \
-  node /app/src/cli.js generate "$SPEC_PATH" --output "$OUTPUT_DIR" --base-url "$BASE_URL"
+  node /app/dist/cli.js generate "$SPEC_PATH" --output "$OUTPUT_DIR" --base-url "$BASE_URL"
 
 exit $EXIT_CODE

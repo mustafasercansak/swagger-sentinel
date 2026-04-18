@@ -1,10 +1,11 @@
-const { getAllOperations } = require('../utils/loader');
+import { getAllOperations } from '../utils/loader.js';
+import { OpenAPISpec, ValidationResult } from '../types.js';
 
 /**
  * Category: Path Design (18 checks, 11 automated)
  */
-function validatePaths(spec) {
-  const results = [];
+export function validatePaths(spec: OpenAPISpec): ValidationResult[] {
+  const results: ValidationResult[] = [];
   const paths = Object.keys(spec.paths || {});
 
   // P15: kebab-case paths
@@ -29,7 +30,7 @@ function validatePaths(spec) {
   });
 
   // P17: Plural resource naming
-  const singularSuspects = [];
+  const singularSuspects: string[] = [];
   for (const p of paths) {
     const segments = p.split('/').filter(s => s && !s.startsWith('{'));
     for (const seg of segments) {
@@ -101,13 +102,13 @@ function validatePaths(spec) {
 
   // P23: Path parameters are documented
   const ops = getAllOperations(spec);
-  let undocumentedParams = [];
+  let undocumentedParams: string[] = [];
   for (const op of ops) {
-    const pathParams = (op.path.match(/\{(\w+)\}/g) || []).map(p => p.replace(/[{}]/g, ''));
+    const pathParams = (op.path.match(/\{(\w+)\}/g) || []).map((p: string) => p.replace(/[{}]/g, ''));
     const definedParams = (op.operation.parameters || [])
       .concat(op.pathItem.parameters || [])
-      .filter(p => p.in === 'path')
-      .map(p => p.name);
+      .filter((p: any) => p.in === 'path')
+      .map((p: any) => p.name);
     
     for (const pp of pathParams) {
       if (!definedParams.includes(pp)) {
@@ -123,7 +124,7 @@ function validatePaths(spec) {
   });
 
   // P24: No HTTP verb names in static path segments
-  const verbsInPaths = [];
+  const verbsInPaths: string[] = [];
   const httpVerbWords = ['get', 'post', 'put', 'patch', 'delete', 'create', 'update', 'remove', 'fetch', 'list', 'retrieve'];
   for (const p of paths) {
     const segments = p.split('/').filter(s => s && !s.startsWith('{'));
@@ -142,11 +143,11 @@ function validatePaths(spec) {
   });
 
   // P25: Path parameter names use consistent casing (no mixing camelCase and snake_case)
-  const allParamNames = [];
+  const allParamNames: string[] = [];
   for (const op of ops) {
     const params = (op.operation.parameters || []).concat(op.pathItem.parameters || [])
-      .filter(p => p.in === 'path');
-    allParamNames.push(...params.map(p => p.name));
+      .filter((p: any) => p.in === 'path');
+    allParamNames.push(...params.map((p: any) => p.name));
   }
   const hasCamel = allParamNames.some(n => /[a-z][A-Z]/.test(n));
   const hasSnake = allParamNames.some(n => n.includes('_'));
@@ -157,7 +158,36 @@ function validatePaths(spec) {
     details: hasCamel && hasSnake ? `Mixed casing detected in: ${[...new Set(allParamNames)].join(', ')}` : null,
   });
 
+  // P26: No sensitive keywords in path parameters
+  const sensitiveKeywords = ['key', 'token', 'secret', 'auth', 'password'];
+  const sensitiveParams: string[] = [];
+  for (const op of ops) {
+    const params = (op.operation.parameters || []).concat(op.pathItem.parameters || [])
+      .filter((p: any) => p.in === 'path');
+    for (const p of params) {
+      if (sensitiveKeywords.some(k => p.name.toLowerCase().includes(k))) {
+        sensitiveParams.push(`${op.method} ${op.path} → {${p.name}}`);
+      }
+    }
+  }
+  results.push({
+    id: 'P26', category: 'Paths', severity: 'warning',
+    passed: sensitiveParams.length === 0,
+    message: 'Path parameters should not contain sensitive keywords (key, token, secret, auth, password)',
+    details: sensitiveParams.length > 0 ? `Sensitive params: ${sensitiveParams.slice(0, 3).join('; ')}` : null,
+  });
+
+  // P27: Avoid trailing dots in path segments
+  const dotSegments = paths.filter(p => {
+    const segments = p.split('/').filter(Boolean);
+    return segments.some(s => s.endsWith('.'));
+  });
+  results.push({
+    id: 'P27', category: 'Paths', severity: 'warning',
+    passed: dotSegments.length === 0,
+    message: 'Path segments should not end with a trailing dot',
+    details: dotSegments.length > 0 ? `Found trailing dots in: ${dotSegments.join(', ')}` : null,
+  });
+
   return results;
 }
-
-module.exports = { validatePaths };

@@ -1,10 +1,11 @@
-const { getAllOperations } = require('../utils/loader');
+import { getAllOperations } from '../utils/loader.js';
+import { OpenAPISpec, ValidationResult } from '../types.js';
 
 /**
  * Category: Operations (22 checks, 13 automated)
  */
-function validateOperations(spec) {
-  const results = [];
+export function validateOperations(spec: OpenAPISpec): ValidationResult[] {
+  const results: ValidationResult[] = [];
   const ops = getAllOperations(spec);
 
   // O31: Every operation has operationId
@@ -62,21 +63,19 @@ function validateOperations(spec) {
   });
 
   // O35: GET operations that return arrays support pagination
+  const listOpsWithoutPagination: string[] = [];
   const getOps = ops.filter(o => o.method === 'GET');
-  const listOpsWithoutPagination = [];
   for (const op of getOps) {
     const responses = op.operation.responses || {};
     const success = responses['200'] || responses['201'];
     if (!success) continue;
 
-    // Check if response looks like a list (array in schema)
     const content = success.content || {};
-    for (const mediaType of Object.values(content)) {
+    for (const mediaType of Object.values(content) as any[]) {
       const schema = mediaType.schema || {};
       if (schema.type === 'array' || (schema.properties && schema.properties.items && schema.properties.items.type === 'array')) {
-        // Check for pagination params
         const params = (op.operation.parameters || []).concat(op.pathItem.parameters || []);
-        const hasPagination = params.some(p => ['page', 'limit', 'offset', 'cursor', 'pageSize', 'page_size'].includes(p.name));
+        const hasPagination = params.some((p: any) => ['page', 'limit', 'offset', 'cursor', 'pageSize', 'page_size'].includes(p.name));
         if (!hasPagination) {
           listOpsWithoutPagination.push(`${op.method} ${op.path}`);
         }
@@ -111,7 +110,7 @@ function validateOperations(spec) {
 
   // O38: No operation uses both query and body for same data
   const postWithQuery = postOps.filter(o => {
-    const params = (o.operation.parameters || []).filter(p => p.in === 'query');
+    const params = (o.operation.parameters || []).filter((p: any) => p.in === 'query');
     return params.length > 0 && o.operation.requestBody;
   });
   results.push({
@@ -122,7 +121,7 @@ function validateOperations(spec) {
   });
 
   // O39: HEAD method defined wherever GET is defined
-  const getPathsWithoutHead = [];
+  const getPathsWithoutHead: string[] = [];
   for (const [pathStr, pathItem] of Object.entries(spec.paths || {})) {
     if (pathItem.get && !pathItem.head) {
       getPathsWithoutHead.push(pathStr);
@@ -151,8 +150,7 @@ function validateOperations(spec) {
   });
 
   // O41: No verb names in operationIds that duplicate HTTP method
-  const verbInId = [];
-  const httpVerbs = ['get', 'post', 'put', 'patch', 'delete', 'list', 'fetch', 'retrieve', 'create', 'update', 'remove'];
+  const verbInId: string[] = [];
   for (const op of ops) {
     if (!op.operation.operationId) continue;
     const id = op.operation.operationId.toLowerCase();
@@ -168,7 +166,58 @@ function validateOperations(spec) {
     details: verbInId.length > 0 ? `Redundant prefix: ${verbInId.slice(0, 3).join('; ')}` : null,
   });
 
+  // O42: GET operations should not have a requestBody
+  const getWithBody = ops.filter(o => o.method === 'GET' && o.operation.requestBody);
+  results.push({
+    id: 'O42', category: 'Operations', severity: 'error',
+    passed: getWithBody.length === 0,
+    message: 'GET operations do not have a requestBody',
+    details: getWithBody.length > 0 ? `Found body on: ${getWithBody.map(o => o.path).join(', ')}` : null,
+  });
+
+  // O43: 429 Too Many Requests include rate-limit headers
+  const rateLimitMissingHeaders: string[] = [];
+  for (const op of ops) {
+    const responses = op.operation.responses || {};
+    const resp429 = responses['429'];
+    if (resp429) {
+      const headers = resp429.headers || {};
+      const hasRateLimit = Object.keys(headers).some(h =>
+        ['retry-after', 'x-ratelimit-limit', 'ratelimit-limit'].includes(h.toLowerCase())
+      );
+      if (!hasRateLimit) {
+        rateLimitMissingHeaders.push(`${op.method} ${op.path}`);
+      }
+    }
+  }
+  results.push({
+    id: 'O43', category: 'Operations', severity: 'warning',
+    passed: rateLimitMissingHeaders.length === 0,
+    message: '429 Too Many Requests responses include rate-limit or retry headers',
+    details: rateLimitMissingHeaders.length > 0 ? `Missing headers: ${rateLimitMissingHeaders.join(', ')}` : null,
+  });
+
+  // O44: 202 Accepted include Location or Link header
+  const acceptedMissingHeaders: string[] = [];
+  for (const op of ops) {
+    const responses = op.operation.responses || {};
+    const resp202 = responses['202'];
+    if (resp202) {
+      const headers = resp202.headers || {};
+      const hasLocation = Object.keys(headers).some(h =>
+        ['location', 'link'].includes(h.toLowerCase())
+      );
+      if (!hasLocation) {
+        acceptedMissingHeaders.push(`${op.method} ${op.path}`);
+      }
+    }
+  }
+  results.push({
+    id: 'O44', category: 'Operations', severity: 'suggestion',
+    passed: acceptedMissingHeaders.length === 0,
+    message: '202 Accepted responses include a Location or Link header for status polling',
+    details: acceptedMissingHeaders.length > 0 ? `Missing headers: ${acceptedMissingHeaders.join(', ')}` : null,
+  });
+
   return results;
 }
-
-module.exports = { validateOperations };

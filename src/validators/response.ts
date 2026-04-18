@@ -1,17 +1,18 @@
-const { getAllOperations, resolveRef } = require('../utils/loader');
+import { getAllOperations, resolveRef } from '../utils/loader.js';
+import { OpenAPISpec, ValidationResult } from '../types.js';
 
 /**
  * Category: Response Design (20 checks, 10 automated)
  */
-function validateResponses(spec) {
-  const results = [];
+export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
+  const results: ValidationResult[] = [];
   const ops = getAllOperations(spec);
 
   // Collect error response schemas to check consistency
-  const errorSchemaRefs = new Set();
-  const opsWithout4xxBody = [];
-  const opsWithout5xx = [];
-  const opsWithoutAnyResponse = [];
+  const errorSchemaRefs = new Set<string>();
+  const opsWithout4xxBody: string[] = [];
+  const opsWithout5xx: string[] = [];
+  const opsWithoutAnyResponse: string[] = [];
 
   for (const op of ops) {
     const responses = op.operation.responses || {};
@@ -24,7 +25,7 @@ function validateResponses(spec) {
     }
 
     // Check 4xx have bodies
-    for (const [code, resp] of Object.entries(responses)) {
+    for (const [code, resp] of Object.entries(responses) as any[]) {
       if (code.startsWith('4') || code.startsWith('5')) {
         const content = resp.content || (resp.$ref ? (resolveRef(spec, resp.$ref) || {}).content : null);
         if (!content && code.startsWith('4') && code !== '404') {
@@ -33,7 +34,7 @@ function validateResponses(spec) {
 
         // Track error schema refs
         if (content) {
-          for (const mt of Object.values(content)) {
+          for (const mt of Object.values(content) as any[]) {
             if (mt.schema && mt.schema.$ref) {
               errorSchemaRefs.add(mt.schema.$ref);
             }
@@ -82,10 +83,10 @@ function validateResponses(spec) {
   });
 
   // R74: Successful responses have content defined (except 204)
-  const successNoContent = [];
+  const successNoContent: string[] = [];
   for (const op of ops) {
     const responses = op.operation.responses || {};
-    for (const [code, resp] of Object.entries(responses)) {
+    for (const [code, resp] of Object.entries(responses) as any[]) {
       if (code.startsWith('2') && code !== '204') {
         if (!resp.content && !resp.$ref) {
           successNoContent.push(`${op.method} ${op.path} → ${code}`);
@@ -101,7 +102,7 @@ function validateResponses(spec) {
   });
 
   // R75: 429 has rate-limit headers
-  const ops429 = [];
+  const ops429: string[] = [];
   for (const op of ops) {
     const resp429 = (op.operation.responses || {})['429'];
     if (resp429) {
@@ -121,9 +122,8 @@ function validateResponses(spec) {
   });
 
   // R76: Response schemas define required fields
-  const schemasNoRequired = [];
-  for (const schemaName in (spec.components?.schemas || {})) {
-    const schema = spec.components.schemas[schemaName];
+  const schemasNoRequired: string[] = [];
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
     if (schema.type === 'object' && schema.properties && (!schema.required || schema.required.length === 0)) {
       schemasNoRequired.push(schemaName);
     }
@@ -136,7 +136,7 @@ function validateResponses(spec) {
   });
 
   // R77: 201 Created responses include a Location header
-  const created201NoLocation = [];
+  const created201NoLocation: string[] = [];
   for (const op of ops) {
     const resp201 = (op.operation.responses || {})['201'];
     if (resp201) {
@@ -155,13 +155,13 @@ function validateResponses(spec) {
   });
 
   // R78: List GET responses have total count (x-total-count header or wrapper object)
-  const listNoCount = [];
+  const listNoCount: string[] = [];
   for (const op of ops) {
     if (op.method !== 'GET') continue;
     const resp200 = (op.operation.responses || {})['200'];
     if (!resp200) continue;
     const content = resp200.content || {};
-    for (const mediaType of Object.values(content)) {
+    for (const mediaType of Object.values(content) as any[]) {
       const schema = mediaType.schema || {};
       if (schema.type === 'array') {
         const headers = resp200.headers || {};
@@ -183,7 +183,7 @@ function validateResponses(spec) {
   });
 
   // R79: GET responses for single resources define ETag or Last-Modified header
-  const getNoEtag = [];
+  const getNoEtag: string[] = [];
   for (const op of ops) {
     if (op.method !== 'GET') continue;
     const pathHasParam = op.path.endsWith('}');
@@ -205,7 +205,38 @@ function validateResponses(spec) {
     details: getNoEtag.length > 0 ? `Missing cache headers: ${getNoEtag.join(', ')}` : null,
   });
 
+  // R80: 406 Not Acceptable suggested for multiple content types
+  const missing406: string[] = [];
+  for (const op of ops) {
+    const responses = op.operation.responses || {};
+    for (const resp of Object.values(responses) as any[]) {
+      const content = resp.content || {};
+      if (Object.keys(content).length > 1 && !responses['406']) {
+        missing406.push(`${op.method} ${op.path}`);
+        break;
+      }
+    }
+  }
+  results.push({
+    id: 'R80', category: 'Response', severity: 'suggestion',
+    passed: missing406.length === 0,
+    message: 'Operations supporting multiple response content types should define 406 Not Acceptable',
+    details: missing406.length > 0 ? `Missing 406 on: ${missing406.join(', ')}` : null,
+  });
+
+  // R81: 415 Unsupported Media Type suggested for operations with requestBody
+  const missing415: string[] = [];
+  for (const op of ops) {
+    if (op.operation.requestBody && !(op.operation.responses || {})['415']) {
+      missing415.push(`${op.method} ${op.path}`);
+    }
+  }
+  results.push({
+    id: 'R81', category: 'Response', severity: 'suggestion',
+    passed: missing415.length === 0,
+    message: 'Operations with request bodies should define 415 Unsupported Media Type',
+    details: missing415.length > 0 ? `Missing 415 on: ${missing415.join(', ')}` : null,
+  });
+
   return results;
 }
-
-module.exports = { validateResponses };

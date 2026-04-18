@@ -2,27 +2,50 @@
   "name": "swagger-sentinel",
   "version": "1.0.0",
   "description": "Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist",
-  "main": "src/index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "swagger-sentinel": "src/cli.js"
+    "swagger-sentinel": "dist/cli.js"
   },
   "scripts": {
-    "test": "node --test tests/validators/*.test.js",
-    "validate": "node src/cli.js validate",
-    "generate": "node src/cli.js generate"
+    "build": "tsc",
+    "build:watch": "tsc -w",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate": "tsx src/cli.ts validate",
+    "generate": "tsx src/cli.ts generate",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": ["openapi", "swagger", "validator", "api", "testing", "vitest", "spec-first"],
+  "keywords": [
+    "openapi",
+    "swagger",
+    "validator",
+    "api",
+    "testing",
+    "vitest",
+    "spec-first"
+  ],
   "author": "Mustafa Sercan Sak",
   "license": "MIT",
   "dependencies": {
-    "commander": "^12.1.0",
-    "js-yaml": "^4.1.0",
+    "@faker-js/faker": "^10.4.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "chalk": "^4.1.2",
     "chokidar": "^3.6.0",
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1"
+    "commander": "^12.1.0",
+    "js-yaml": "^4.1.0"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.4"
   }
 }

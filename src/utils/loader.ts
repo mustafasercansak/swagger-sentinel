@@ -1,11 +1,12 @@
-const fs = require('fs');
-const path = require('path');
-const yaml = require('js-yaml');
+import fs from 'fs';
+import path from 'path';
+import yaml from 'js-yaml';
+import { OpenAPISpec } from '../types.js';
 
 /**
  * Load and parse an OpenAPI spec from YAML or JSON file
  */
-async function loadSpec(filePath) {
+export function loadSpec(filePath: string): OpenAPISpec {
   const resolved = path.resolve(filePath);
 
   if (!fs.existsSync(resolved)) {
@@ -15,7 +16,7 @@ async function loadSpec(filePath) {
   const content = fs.readFileSync(resolved, 'utf-8');
   const ext = path.extname(resolved).toLowerCase();
 
-  let spec;
+  let spec: any;
   if (ext === '.json') {
     spec = JSON.parse(content);
   } else if (ext === '.yaml' || ext === '.yml') {
@@ -42,13 +43,13 @@ async function loadSpec(filePath) {
     throw new Error(`Unsupported OpenAPI version: ${spec.openapi}. Only 3.x is supported.`);
   }
 
-  return spec;
+  return spec as OpenAPISpec;
 }
 
 /**
  * Resolve $ref within a spec (simple single-file resolution)
  */
-function resolveRef(spec, ref) {
+export function resolveRef(spec: any, ref: string | undefined): any {
   if (!ref || !ref.startsWith('#/')) return null;
   const parts = ref.replace('#/', '').split('/');
   let current = spec;
@@ -61,9 +62,9 @@ function resolveRef(spec, ref) {
 /**
  * Get all operations from a spec as a flat list
  */
-function getAllOperations(spec) {
-  const operations = [];
-  const methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
+export function getAllOperations(spec: OpenAPISpec): any[] {
+  const operations: any[] = [];
+  const methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'] as const;
 
   for (const [pathStr, pathItem] of Object.entries(spec.paths || {})) {
     for (const method of methods) {
@@ -81,5 +82,3 @@ function getAllOperations(spec) {
 
   return operations;
 }
-
-module.exports = { loadSpec, resolveRef, getAllOperations };

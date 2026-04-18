@@ -1,7 +1,9 @@
+import { ValidationResult } from '../types.js';
+
 /**
  * Format validation results for different output formats
  */
-function formatResults(results, format) {
+export function formatResults(results: ValidationResult[], format: string): any {
   if (format === 'json') {
     const passed = results.filter(r => r.passed);
     const failed = results.filter(r => !r.passed);
@@ -28,5 +30,3 @@ function formatResults(results, format) {
 
   return results;
 }
-
-module.exports = { formatResults };

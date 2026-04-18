@@ -1,8 +1,10 @@
+import { OpenAPISpec, ValidationResult } from '../types.js';
+
 /**
  * Category: Structure & Metadata (12 checks, 11 automated)
  */
-function validateStructure(spec) {
-  const results = [];
+export function validateStructure(spec: OpenAPISpec): ValidationResult[] {
+  const results: ValidationResult[] = [];
   const info = spec.info || {};
 
   results.push({
@@ -83,5 +85,3 @@ function validateStructure(spec) {
 
   return results;
 }
-
-module.exports = { validateStructure };

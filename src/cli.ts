@@ -1,14 +1,22 @@
 #!/usr/bin/env node
 
-const { Command } = require('commander');
-const path = require('path');
-const fs = require('fs');
-const chalk = require('chalk');
-const { loadSpec } = require('./utils/loader');
-const { validate } = require('./validators/index');
-const { generate } = require('./generators/index');
-const { formatResults } = require('./utils/formatter');
-const pkg = require('../package.json');
+import { Command } from 'commander';
+import path from 'path';
+import fs from 'fs';
+import chalk from 'chalk';
+import { loadSpec } from './utils/loader.js';
+import { validate } from './validators/index.js';
+import { generate } from './generators/index.js';
+import { formatResults } from './utils/formatter.js';
+import { loadConfig } from './utils/config.js';
+import { ValidationResult, SentinelConfig } from './types.js';
+
+import { fileURLToPath } from 'url';
+
+// Load package.json for versioning
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkgPath = path.resolve(__dirname, '../package.json');
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
 const program = new Command();
 
@@ -26,23 +34,29 @@ program
   .option('--strict', 'Treat warnings as errors')
   .option('--format <format>', 'Output format: text, json', 'text')
   .option('--category <category>', 'Validate only a specific category')
-  .action((specFile, options) => {
+  .action((specFile: string, options: any) => {
     try {
+      const config = loadConfig();
+      const mergedOptions = { 
+        ...options, 
+        strict: options.strict || config.strict || false 
+      };
+      
       const spec = loadSpec(specFile);
-      const results = validate(spec, options);
+      const results = validate(spec, { ...mergedOptions, config });
       const output = formatResults(results, options.format);
 
       if (options.format === 'json') {
         console.log(JSON.stringify(output, null, 2));
       } else {
-        printResults(results, options.strict);
+        printResults(results, mergedOptions.strict);
       }
 
       const hasErrors = results.some(r => r.severity === 'error' && !r.passed);
       const hasWarnings = results.some(r => r.severity === 'warning' && !r.passed);
 
-      process.exit(hasErrors || (options.strict && hasWarnings) ? 1 : 0);
-    } catch (err) {
+      process.exit(hasErrors || (mergedOptions.strict && hasWarnings) ? 1 : 0);
+    } catch (err: any) {
       console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
       process.exit(1);
     }
@@ -57,10 +71,21 @@ program
   .option('--output <dir>', 'Output directory for generated tests', './tests')
   .option('--tag <tag>', 'Generate tests for a specific tag only')
   .option('--base-url <url>', 'Base URL for API requests', 'http://localhost:3000')
-  .action((specFile, options) => {
+  .option('--seed <number>', 'Seed for Faker.js consistency', '42')
+  .action((specFile: string, options: any) => {
     try {
+      const config = loadConfig();
+      const genConfig = config.generate || {};
+      
+      const mergedOptions = {
+        ...options,
+        output: options.output !== './tests' ? options.output : (genConfig.output || './tests'),
+        baseUrl: options.baseUrl !== 'http://localhost:3000' ? options.baseUrl : (genConfig.baseUrl || 'http://localhost:3000'),
+        seed: options.seed !== '42' ? options.seed : (genConfig.seed || '42')
+      };
+
       const spec = loadSpec(specFile);
-      const files = generate(spec, options);
+      const files = generate(spec, mergedOptions);
 
       if (!fs.existsSync(options.output)) {
         fs.mkdirSync(options.output, { recursive: true });
@@ -73,7 +98,7 @@ program
       }
 
       console.log(chalk.green(`\n✓ Generated ${files.length} test file(s) in ${options.output}\n`));
-    } catch (err) {
+    } catch (err: any) {
       console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
       process.exit(1);
     }
@@ -86,19 +111,23 @@ program
   .command('watch <specFile>')
   .description('Watch spec file and re-validate on changes')
   .option('--strict', 'Treat warnings as errors')
-  .action((specFile, options) => {
-    const chokidar = require('chokidar');
+  .action(async (specFile: string, options: any) => {
+    const chokidar = await import('chokidar');
+    const config = loadConfig();
+    const mergedOptions = { 
+      ...options, 
+      strict: options.strict || config.strict || false 
+    };
 
     console.log(chalk.cyan(`\n👁  Watching ${specFile} for changes...\n`));
 
     const runValidation = () => {
       try {
-        delete require.cache[require.resolve(path.resolve(specFile))];
         const spec = loadSpec(specFile);
-        const results = validate(spec, options);
+        const results = validate(spec, { ...mergedOptions, config });
         console.log(chalk.gray(`\n--- ${new Date().toLocaleTimeString()} ---`));
-        printResults(results, options.strict);
-      } catch (err) {
+        printResults(results, mergedOptions.strict);
+      } catch (err: any) {
         console.error(chalk.red(`\n✗ ${err.message}`));
       }
     };
@@ -117,7 +146,7 @@ program
   .command('syntax <specFile>')
   .alias('validate-only')
   .description('Quick syntax/structure check only')
-  .action((specFile) => {
+  .action((specFile: string) => {
     try {
       const spec = loadSpec(specFile);
 
@@ -129,13 +158,13 @@ program
       let opCount = 0;
       for (const p of Object.values(spec.paths)) {
         for (const method of ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']) {
-          if (p[method]) opCount++;
+          if ((p as any)[method]) opCount++;
         }
       }
 
       console.log(chalk.green(`\n✓ Valid OpenAPI ${spec.openapi} spec`));
       console.log(chalk.gray(`  ${pathCount} paths, ${opCount} operations\n`));
-    } catch (err) {
+    } catch (err: any) {
       console.error(chalk.red(`\n✗ Invalid spec: ${err.message}\n`));
       process.exit(1);
     }
@@ -148,18 +177,18 @@ program
   .command('tags <specFile>')
   .alias('list-tags')
   .description('List all operation tags in the spec')
-  .action((specFile) => {
+  .action((specFile: string) => {
     try {
       const spec = loadSpec(specFile);
-      const tags = new Map();
+      const tags = new Map<string, string[]>();
 
       for (const [pathStr, pathItem] of Object.entries(spec.paths || {})) {
         for (const method of ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']) {
-          const op = pathItem[method];
+          const op = (pathItem as any)[method];
           if (op && op.tags) {
             for (const tag of op.tags) {
               if (!tags.has(tag)) tags.set(tag, []);
-              tags.get(tag).push(`${method.toUpperCase()} ${pathStr}`);
+              tags.get(tag)!.push(`${method.toUpperCase()} ${pathStr}`);
             }
           }
         }
@@ -176,7 +205,7 @@ program
         for (const op of ops) console.log(chalk.gray(`    ${op}`));
       }
       console.log('');
-    } catch (err) {
+    } catch (err: any) {
       console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
       process.exit(1);
     }
@@ -185,7 +214,7 @@ program
 // =====================================================
 // PRINT HELPERS
 // =====================================================
-function printResults(results, strict) {
+function printResults(results: ValidationResult[], strict: boolean) {
   const passed = results.filter(r => r.passed);
   const failed = results.filter(r => !r.passed && r.severity === 'error');
   const warnings = results.filter(r => !r.passed && r.severity === 'warning');

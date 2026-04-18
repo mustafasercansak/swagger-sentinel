@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Swagger Sentinel API
+  description: Validated spec.
+  version: 1.0.0
+  termsOfService: https://api.example.com/terms
+  contact:
+    name: Mustafa Sercan Sak
+    email: api@example.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+externalDocs:
+  description: Find more info here
+  url: https://api.example.com/docs
+servers:
+  - url: https://api.example.com/v1
+tags:
+  - name: Pets
+    description: Operations related to pet management
+paths:
+  /pets:
+    get:
+      summary: List pets
+      operationId: listPets
+      tags: [Pets]
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: The number of items to skip before starting to collect the result set
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { type: string }
+              example:
+                items: [dog, cat, bird]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      summary: Create a pet
+      operationId: createPet
+      tags: [Pets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          $ref: '#/components/responses/InternalError'
+    head:
+      summary: Check pets existence
+      operationId: checkPets
+      tags: [Pets]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {}
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 401
+            message: Unauthorized
+    ForbiddenError:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 403
+            message: Forbidden
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 500
+            message: Internal Server Error
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Bad Request
+    Pet:
+      type: object
+      required: [id, name, type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [dog, cat, bird, fish]
+        birthDate:
+          type: string
+          format: date
+        ownerEmail:
+          type: string
+          format: email
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - bearerAuth: []

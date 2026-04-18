@@ -1,10 +1,11 @@
-const { getAllOperations } = require('../utils/loader');
+import { getAllOperations } from '../utils/loader.js';
+import { OpenAPISpec, ValidationResult } from '../types.js';
 
 /**
  * Category: Documentation (10 checks, 6 automated)
  */
-function validateDocumentation(spec) {
-  const results = [];
+export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
+  const results: ValidationResult[] = [];
   const ops = getAllOperations(spec);
 
   // DOC110: All parameters have description
@@ -13,7 +14,7 @@ function validateDocumentation(spec) {
   for (const op of ops) {
     const params = (op.operation.parameters || []).concat(op.pathItem.parameters || []);
     totalParams += params.length;
-    describedParams += params.filter(p => !!p.description).length;
+    describedParams += params.filter((p: any) => !!p.description).length;
   }
   results.push({
     id: 'DOC110', category: 'Documentation', severity: 'warning',
@@ -23,11 +24,10 @@ function validateDocumentation(spec) {
   });
 
   // DOC112: Schemas have examples
-  const schemasWithoutExamples = [];
-  for (const schemaName in (spec.components?.schemas || {})) {
-    const schema = spec.components.schemas[schemaName];
+  const schemasWithoutExamples: string[] = [];
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
     if (schema.properties) {
-      const propsWithExamples = Object.values(schema.properties).filter(p => p.example !== undefined).length;
+      const propsWithExamples = Object.values(schema.properties as any).filter((p: any) => p.example !== undefined).length;
       const totalProps = Object.keys(schema.properties).length;
       if (propsWithExamples < totalProps * 0.5) {  // At least 50% should have examples
         schemasWithoutExamples.push(schemaName);
@@ -42,7 +42,7 @@ function validateDocumentation(spec) {
   });
 
   // DOC115: Deprecated operations have x-sunset-date
-  const deprecatedNoSunset = [];
+  const deprecatedNoSunset: string[] = [];
   for (const op of ops) {
     if (op.operation.deprecated && !op.operation['x-sunset-date']) {
       deprecatedNoSunset.push(`${op.method} ${op.path}`);
@@ -56,13 +56,13 @@ function validateDocumentation(spec) {
   });
 
   // DOC116: Tags have descriptions
-  const tagsUsed = new Set();
+  const tagsUsed = new Set<string>();
   for (const op of ops) {
     for (const tag of (op.operation.tags || [])) {
       tagsUsed.add(tag);
     }
   }
-  const tagDefs = (spec.tags || []).reduce((acc, t) => { acc[t.name] = t; return acc; }, {});
+  const tagDefs = (spec.tags || []).reduce((acc: any, t) => { acc[t.name] = t; return acc; }, {});
   const tagsNoDesc = [...tagsUsed].filter(t => !tagDefs[t] || !tagDefs[t].description);
   results.push({
     id: 'DOC116', category: 'Documentation', severity: 'suggestion',
@@ -72,12 +72,12 @@ function validateDocumentation(spec) {
   });
 
   // DOC117: Operations include at least one response example
-  const noExamples = [];
+  const noExamples: string[] = [];
   for (const op of ops) {
     let hasExample = false;
-    for (const resp of Object.values(op.operation.responses || {})) {
+    for (const resp of Object.values(op.operation.responses || {}) as any[]) {
       const content = resp.content || {};
-      for (const mt of Object.values(content)) {
+      for (const mt of Object.values(content) as any[]) {
         if (mt.example !== undefined || mt.examples !== undefined) {
           hasExample = true;
           break;
@@ -102,12 +102,12 @@ function validateDocumentation(spec) {
   });
 
   // DOC118: Request bodies include an example
-  const bodyNoExamples = [];
+  const bodyNoExamples: string[] = [];
   for (const op of ops) {
     if (!op.operation.requestBody) continue;
     const content = op.operation.requestBody.content || {};
     let hasExample = false;
-    for (const mt of Object.values(content)) {
+    for (const mt of Object.values(content) as any[]) {
       if (mt.example !== undefined || mt.examples !== undefined) {
         hasExample = true;
         break;
@@ -126,10 +126,36 @@ function validateDocumentation(spec) {
     id: 'DOC118', category: 'Documentation', severity: 'suggestion',
     passed: bodyNoExamples.length === 0,
     message: 'Request bodies include an example',
-    details: bodyNoExamples.length > 0 ? `No body example: ${bodyNoExamples.slice(0, 3).join(', ')}${bodyNoExamples.length > 3 ? ` (+${bodyNoExamples.length - 3} more)` : ''}` : null,
+    details: bodyNoExamples.length > 0 ? `No body example: ${bodyNoExamples.slice(0, 3).join('; ')}${bodyNoExamples.length > 3 ? ` (+${bodyNoExamples.length - 3} more)` : ''}` : null,
+  });
+
+  // DOC119: API description is detailed
+  const description = spec.info?.description || '';
+  results.push({
+    id: 'DOC119', category: 'Documentation', severity: 'warning',
+    passed: description.length > 20,
+    message: 'The API info block has a detailed description (>20 characters)',
+    details: description.length <= 20 ? `Current description is too short (${description.length} chars)` : null,
+  });
+
+  // DOC120: Every property in components.schemas should have a description
+  const propsNoDesc: string[] = [];
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
+    if (schema.properties) {
+      for (const [propName, p] of Object.entries(schema.properties)) {
+        const propSchema = p as any;
+        if (!propSchema.description) {
+          propsNoDesc.push(`${schemaName}.${propName}`);
+        }
+      }
+    }
+  }
+  results.push({
+    id: 'DOC120', category: 'Documentation', severity: 'warning',
+    passed: propsNoDesc.length === 0,
+    message: 'All schema properties have descriptions',
+    details: propsNoDesc.length > 0 ? `Missing: ${propsNoDesc.slice(0, 3).join(', ')}${propsNoDesc.length > 3 ? ` (+${propsNoDesc.length - 3} more)` : ''}` : null,
   });
 
   return results;
 }
-
-module.exports = { validateDocumentation };

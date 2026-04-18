@@ -26,14 +26,17 @@ swagger-sentinel validate api.yaml --category paths # validate one category
 ```
 
 ### Generate Tests
-
-Generate Vitest TypeScript test suites from your spec:
-
-```bash
-swagger-sentinel generate api.yaml --output ./tests/
-swagger-sentinel generate api.yaml --tag Pets           # specific tag only
-swagger-sentinel generate api.yaml --base-url http://localhost:8080
-```
+ 
+Generate **TypeScript** Vitest test suites from your spec. Now includes **Faker.js** integration for realistic, schema-driven test data:
+ 
+ ```bash
+ swagger-sentinel generate api.yaml --output ./tests/
+ swagger-sentinel generate api.yaml --tag Pets           # specific tag only
+ swagger-sentinel generate api.yaml --base-url http://localhost:8080
+ swagger-sentinel generate api.yaml --seed 123          # consistent random data
+ ```
+ 
+ The generator automatically maps semantic field names (like `email`, `firstName`, `birthDate`) to realistic mock data.
 
 ### Watch Mode
 
@@ -56,12 +59,12 @@ swagger-sentinel tags api.yaml      # list all operation tags
 | Category | Checks | Automated |
 |----------|--------|-----------|
 | Structure & Metadata | 12 | 11 |
-| Path Design | 18 | 11 |
-| Operations | 22 | 12 |
-| Request Validation | 16 | 9 |
-| Response Design | 20 | 10 |
-| Security | 14 | 10 |
-| Documentation | 10 | 6 |
+| Path Design | 18 | 13 |
+| Operations | 22 | 15 |
+| Request Validation | 16 | 12 |
+| Response Design | 20 | 12 |
+| Security | 14 | 12 |
+| Documentation | 10 | 8 |
 | **Total** | **130** | **83** |
 
 See [docs/CHECKLIST.md](docs/CHECKLIST.md) for the full checklist.
@@ -79,20 +82,65 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-      - run: npx swagger-sentinel validate specs/api.yaml --strict
-      - run: npx swagger-sentinel generate specs/api.yaml --output tests/
-      - run: npx vitest run tests/
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+      - name: Validate
+        run: node dist/cli.js validate specs/api.yaml --strict
+      - name: Generate Tests
+        run: node dist/cli.js generate specs/api.yaml --output tests/
+      - name: Run Tests
+        run: npx vitest run tests/
 ```
 
-## Programmatic Usage
+## Programmatic Usage (TypeScript/ESM)
 
-```javascript
-const { loadSpec, validate, generate } = require('swagger-sentinel');
+```typescript
+import { loadSpec, validate, generate } from 'swagger-sentinel';
 
-const spec = await loadSpec('api.yaml');
+const spec = loadSpec('api.yaml');
 const results = validate(spec);
 const testFiles = generate(spec, { output: './tests' });
 ```
+
+## Development
+
+If you are contributing to **swagger-sentinel**, use the following scripts:
+
+- **`npm run build`**: Compiles TypeScript (important for updating the `dist/` binary used by `npx`).
+- **`npm run validate <file>`**: Runs the validator directly from source (using `tsx`).
+- **`npm test`**: Runs the Vitest suite.
+- **`npm run build:watch`**: Automatically recompiles on every file change.
+
+> [!IMPORTANT]
+> When testing the CLI locally via `npx .`, always run `npm run build` first to ensure the distributed files are up to date!
+
+## Configuration
+
+You can customize **swagger-sentinel** using a `.sentinelrc` file (JSON or YAML) in your project root.
+
+```json
+{
+  "strict": true,
+  "ignore": ["R50", "P15"],
+  "overrides": {
+    "SEC101": "error",
+    "DOC119": "suggestion"
+  },
+  "generate": {
+    "seed": 12345,
+    "baseUrl": "https://api.staging.com",
+    "output": "./generated-tests"
+  }
+}
+```
+
+### Options
+- **`strict`**: Treat warnings as errors (equivalent to `--strict`).
+- **`ignore`**: An array of Rule IDs to completely skip during validation.
+- **`overrides`**: A map of Rule IDs to their desired severity (`error`, `warning`, or `suggestion`).
+- **`generate`**: Default options for the `generate` command.
 
 ## License
 

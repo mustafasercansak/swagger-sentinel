@@ -1,10 +1,11 @@
-const { getAllOperations } = require('../utils/loader');
+import { getAllOperations } from '../utils/loader.js';
+import { OpenAPISpec, ValidationResult } from '../types.js';
 
 /**
  * Category: Security (14 checks, 10 automated)
  */
-function validateSecurity(spec) {
-  const results = [];
+export function validateSecurity(spec: OpenAPISpec): ValidationResult[] {
+  const results: ValidationResult[] = [];
   const ops = getAllOperations(spec);
 
   // SEC90: Security schemes defined
@@ -17,9 +18,9 @@ function validateSecurity(spec) {
   });
 
   // SEC91: No API keys in query parameters
-  const queryApiKeys = [];
+  const queryApiKeys: string[] = [];
   if (spec.components?.securitySchemes) {
-    for (const [name, scheme] of Object.entries(spec.components.securitySchemes)) {
+    for (const [name, scheme] of Object.entries(spec.components.securitySchemes) as any[]) {
       if (scheme.type === 'apiKey' && scheme.in === 'query') {
         queryApiKeys.push(name);
       }
@@ -34,12 +35,11 @@ function validateSecurity(spec) {
 
   // SEC93: Sensitive fields marked writeOnly
   const sensitiveFields = ['password', 'secret', 'token', 'apiKey', 'api_key', 'creditCard', 'ssn'];
-  const notWriteOnly = [];
-  for (const schemaName in (spec.components?.schemas || {})) {
-    const schema = spec.components.schemas[schemaName];
+  const notWriteOnly: string[] = [];
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
     if (schema.properties) {
-      for (const [propName, propSchema] of Object.entries(schema.properties)) {
-        if (sensitiveFields.some(f => propName.toLowerCase().includes(f.toLowerCase())) && !propSchema.writeOnly) {
+      for (const [propName, propSchema] of Object.entries(schema.properties as any)) {
+        if (sensitiveFields.some(f => propName.toLowerCase().includes(f.toLowerCase())) && !(propSchema as any).writeOnly) {
           notWriteOnly.push(`${schemaName}.${propName}`);
         }
       }
@@ -73,11 +73,11 @@ function validateSecurity(spec) {
   });
 
   // SEC96: OAuth2 flows define scopes
-  const oauthNoScopes = [];
+  const oauthNoScopes: string[] = [];
   if (spec.components?.securitySchemes) {
-    for (const [name, scheme] of Object.entries(spec.components.securitySchemes)) {
+    for (const [name, scheme] of Object.entries(spec.components.securitySchemes) as any[]) {
       if (scheme.type === 'oauth2' && scheme.flows) {
-        for (const [flowName, flow] of Object.entries(scheme.flows)) {
+        for (const [flowName, flow] of Object.entries(scheme.flows) as any[]) {
           if (!flow.scopes || Object.keys(flow.scopes).length === 0) {
             oauthNoScopes.push(`${name}.${flowName}`);
           }
@@ -93,7 +93,7 @@ function validateSecurity(spec) {
   });
 
   // SEC97: Secured operations define 401 Unauthorized response
-  const securedNo401 = [];
+  const securedNo401: string[] = [];
   for (const op of ops) {
     const opSecurity = op.operation.security !== undefined ? op.operation.security : spec.security;
     const isSecured = opSecurity && opSecurity.length > 0;
@@ -112,7 +112,7 @@ function validateSecurity(spec) {
   });
 
   // SEC98: Secured operations define 403 Forbidden response
-  const securedNo403 = [];
+  const securedNo403: string[] = [];
   for (const op of ops) {
     const opSecurity = op.operation.security !== undefined ? op.operation.security : spec.security;
     const isSecured = opSecurity && opSecurity.length > 0;
@@ -141,9 +141,9 @@ function validateSecurity(spec) {
   });
 
   // SEC100: HTTP Basic authentication not used (insecure without TLS enforcement)
-  const basicSchemes = [];
+  const basicSchemes: string[] = [];
   if (spec.components?.securitySchemes) {
-    for (const [name, scheme] of Object.entries(spec.components.securitySchemes)) {
+    for (const [name, scheme] of Object.entries(spec.components.securitySchemes) as any[]) {
       if (scheme.type === 'http' && scheme.scheme === 'basic') {
         basicSchemes.push(name);
       }
@@ -156,7 +156,43 @@ function validateSecurity(spec) {
     details: basicSchemes.length > 0 ? `Basic auth schemes: ${basicSchemes.join(', ')} — prefer Bearer/OAuth2/API key` : null,
   });
 
+  // SEC101: No X- prefix for custom security headers
+  const xPrefixHeaders: string[] = [];
+  if (spec.components?.securitySchemes) {
+    for (const [name, scheme] of Object.entries(spec.components.securitySchemes) as any[]) {
+      if (scheme.type === 'apiKey' && scheme.in === 'header' && scheme.name && scheme.name.toUpperCase().startsWith('X-')) {
+        xPrefixHeaders.push(`${name} ("${scheme.name}")`);
+      }
+    }
+  }
+  results.push({
+    id: 'SEC101', category: 'Security', severity: 'warning',
+    passed: xPrefixHeaders.length === 0,
+    message: 'Security headers do not use the deprecated X- prefix',
+    details: xPrefixHeaders.length > 0 ? `Found: ${xPrefixHeaders.join(', ')} — prefer direct names (e.g., "Api-Key" instead of "X-Api-Key")` : null,
+  });
+
+  // SEC102: Content-Security-Policy suggested for HTML responses
+  const htmlMissingCsp: string[] = [];
+  for (const op of ops) {
+    const responses = op.operation.responses || {};
+    for (const [code, resp] of Object.entries(responses) as any[]) {
+      const content = (resp as any).content || {};
+      if (content['text/html']) {
+        const headers = (resp as any).headers || {};
+        const hasCsp = Object.keys(headers).some(h => h.toLowerCase() === 'content-security-policy');
+        if (!hasCsp) {
+          htmlMissingCsp.push(`${op.method} ${op.path} (${code})`);
+        }
+      }
+    }
+  }
+  results.push({
+    id: 'SEC102', category: 'Security', severity: 'suggestion',
+    passed: htmlMissingCsp.length === 0,
+    message: 'HTML responses should include a Content-Security-Policy header',
+    details: htmlMissingCsp.length > 0 ? `Missing CSP on: ${htmlMissingCsp.join(', ')}` : null,
+  });
+
   return results;
 }
-
-module.exports = { validateSecurity };

@@ -34,7 +34,9 @@
 | 21 | P23 | Path params documented | ✅ | Error |
 | 22 | P24 | No HTTP verb names in path segments | ✅ | Warning |
 | 23 | P25 | Path param names use consistent casing | ✅ | Suggestion |
-| 24-30 | — | Resource abstraction, naming semantics, HATEOAS links, etc. | 👁 | — |
+| 24 | P26 | No sensitive keywords in path params | ✅ | Warning |
+| 25 | P27 | No trailing dots in path segments | ✅ | Warning |
+| 26-30 | — | Resource abstraction, naming semantics, HATEOAS links, etc. | 👁 | — |
 
 ## Operations (22 checks)
 
@@ -52,7 +54,10 @@
 | 40 | O39 | HEAD defined wherever GET is defined | ✅ | Suggestion |
 | 41 | O40 | PATCH uses merge-patch or json-patch content type | ✅ | Suggestion |
 | 42 | O41 | operationIds don't redundantly prefix the HTTP method | ✅ | Suggestion |
-| 43-52 | — | Idempotency, CORS preflight, rate-limit retry headers, etc. | 👁 | — |
+| 43 | O42 | GET operations do not have a requestBody | ✅ | Error |
+| 44 | O43 | 429 has rate-limit or retry headers | ✅ | Warning |
+| 45 | O44 | 202 Accepted has Location or Link header | ✅ | Suggestion |
+| 46-52 | — | Idempotency, CORS preflight, etc. | 👁 | — |
 
 ## Request Validation (16 checks)
 
@@ -67,7 +72,10 @@
 | 59 | R56 | Parameters have descriptions | ✅ | Warning |
 | 60 | R57 | Fields with semantic names carry matching format | ✅ | Suggestion |
 | 61 | R58 | Binary/file fields use multipart/form-data | ✅ | Warning |
-| 62-68 | — | Complex pattern validation, custom validators, etc. | 👁 | — |
+| 62 | R59 | ID parameters define format or pattern | ✅ | Warning |
+| 63 | R60 | Large body objects define maxProperties | ✅ | Suggestion |
+| 64 | R61 | No examples for sensitive fields | ✅ | Warning |
+| 65-68 | — | Complex pattern validation, custom validators, etc. | 👁 | — |
 
 ## Response Design (20 checks)
 
@@ -83,7 +91,9 @@
 | 76 | R77 | 201 Created includes Location header | ✅ | Suggestion |
 | 77 | R78 | List responses include total count | ✅ | Suggestion |
 | 78 | R79 | Single-resource GETs define ETag or Last-Modified | ✅ | Suggestion |
-| 79-88 | — | Content negotiation, link headers, partial content, etc. | 👁 | — |
+| 79 | R80 | 406 Not Acceptable defined for multiple content types | ✅ | Suggestion |
+| 80 | R81 | 415 Unsupported Media Type for requestBody | ✅ | Suggestion |
+| 81-88 | — | Content negotiation, link headers, partial content, etc. | 👁 | — |
 
 ## Security (14 checks)
 
@@ -99,7 +109,9 @@
 | 96 | SEC98 | Secured operations define 403 response | ✅ | Suggestion |
 | 97 | SEC99 | No credentials embedded in server URLs | ✅ | Error |
 | 98 | SEC100 | HTTP Basic auth is not used | ✅ | Warning |
-| 99-102 | — | CORS headers, token expiry, mTLS, etc. | 👁 | — |
+| 99 | SEC101 | No X- prefix for custom security headers | ✅ | Warning |
+| 100 | SEC102 | HTML responses include CSP header | ✅ | Suggestion |
+| 101-102 | — | CORS headers, token expiry, mTLS, etc. | 👁 | — |
 
 ## Documentation (10 checks)
 
@@ -111,7 +123,9 @@
 | 106 | DOC116 | Tags have descriptions | ✅ | Suggestion |
 | 107 | DOC117 | Operations include at least one response example | ✅ | Suggestion |
 | 108 | DOC118 | Request bodies include an example | ✅ | Suggestion |
-| 109-112 | — | Changelog, migration guide, webhook docs, etc. | 👁 | — |
+| 109 | DOC119 | API info has detailed description (>20 chars) | ✅ | Warning |
+| 110 | DOC120 | Schema properties have descriptions | ✅ | Warning |
+| 111-112 | — | Changelog, migration guide, webhook docs, etc. | 👁 | — |
 
 ---
 
