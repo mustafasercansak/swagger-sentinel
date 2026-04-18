@@ -19,28 +19,35 @@ if [ ! -f "$SPEC_PATH" ]; then
 fi
 
 # ── Collect structured output for action outputs ──────────────────────────────
+TMPFILE=$(mktemp /tmp/sentinel-json.XXXXXX)
+
 JSON_CMD="node /app/src/cli.js validate $SPEC_PATH --format json"
 if [ -n "$CATEGORY" ]; then
   JSON_CMD="$JSON_CMD --category $CATEGORY"
 fi
 
-JSON_OUTPUT=$(eval "$JSON_CMD" 2>/dev/null || true)
+eval "$JSON_CMD" > "$TMPFILE" 2>/dev/null || true
 
-if [ -n "$JSON_OUTPUT" ] && [ -n "$GITHUB_OUTPUT" ]; then
-  node -e "
-    const raw = \`$JSON_OUTPUT\`;
-    const d = JSON.parse(raw);
-    const s = d.summary || {};
-    const out = [
-      'errors='   + (s.errors      || 0),
-      'warnings=' + (s.warnings    || 0),
-      'suggestions=' + (s.suggestions || 0),
-      'passed='   + (s.passed      || 0),
-      'total='    + (s.total       || 0),
-    ].join('\n');
-    require('fs').appendFileSync(process.env.GITHUB_OUTPUT, out + '\n');
-  " 2>/dev/null || true
+if [ -s "$TMPFILE" ] && [ -n "$GITHUB_OUTPUT" ]; then
+  node - "$TMPFILE" "$GITHUB_OUTPUT" <<'JSEOF'
+const fs = require('fs');
+const [,, jsonFile, outputFile] = process.argv;
+try {
+  const d = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+  const s = d.summary || {};
+  const lines = [
+    'errors='       + (s.errors       || 0),
+    'warnings='     + (s.warnings     || 0),
+    'suggestions='  + (s.suggestions  || 0),
+    'passed='       + (s.passed       || 0),
+    'total='        + (s.total        || 0),
+  ].join('\n') + '\n';
+  fs.appendFileSync(outputFile, lines);
+} catch (_) {}
+JSEOF
 fi
+
+rm -f "$TMPFILE"
 
 # ── Human-readable validation output ─────────────────────────────────────────
 VALIDATE_CMD="node /app/src/cli.js validate $SPEC_PATH"
