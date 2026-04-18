@@ -43,6 +43,8 @@ program
       
       if (hasErrors || (options.strict && hasWarnings)) {
         process.exit(1);
+      } else {
+        process.exit(0);
       }
     } catch (err) {
       console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
@@ -235,4 +237,4 @@ function printResults(results, strict) {
   console.log('');
 }
 
-program.parse();
+program.parseAsync();
