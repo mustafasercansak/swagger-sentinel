@@ -66,7 +66,7 @@ function validateStructure(spec) {
   });
 
   // Check components exist if there are responses with $ref
-  const hasRefs = JSON.stringify(spec.paths).includes('$ref');
+  const hasRefs = JSON.stringify(spec.paths || {}).includes('$ref');
   results.push({
     id: 'S10', category: 'Structure', severity: 'error',
     passed: !hasRefs || !!spec.components,
