@@ -1,5 +1,12 @@
 #!/bin/sh
 
+echo "--- sentinel debug ---"
+echo "SPEC_PATH : ${INPUT_SPEC_PATH}"
+echo "STRICT    : ${INPUT_STRICT}"
+echo "GH_OUTPUT : ${GITHUB_OUTPUT}"
+echo "PWD       : $(pwd)"
+echo "----------------------"
+
 SPEC_PATH="${INPUT_SPEC_PATH}"
 STRICT="${INPUT_STRICT:-false}"
 CATEGORY="${INPUT_CATEGORY:-}"
@@ -13,7 +20,7 @@ if [ -z "$SPEC_PATH" ]; then
 fi
 
 if [ ! -f "$SPEC_PATH" ]; then
-  echo "::error::Spec file not found: $SPEC_PATH"
+  echo "::error::Spec file not found: $SPEC_PATH (pwd=$(pwd))"
   exit 1
 fi
 
@@ -23,10 +30,9 @@ if [ -n "$GITHUB_OUTPUT" ]; then
   TMPJS=$(mktemp /tmp/sentinelXXXXXX)
 
   JSON_CMD="node /app/src/cli.js validate $SPEC_PATH --format json"
-  if [ -n "$CATEGORY" ]; then
-    JSON_CMD="$JSON_CMD --category $CATEGORY"
-  fi
+  [ -n "$CATEGORY" ] && JSON_CMD="$JSON_CMD --category $CATEGORY"
   eval "$JSON_CMD" > "$TMPJSON" 2>/dev/null
+  echo "JSON exit: $?"
 
   cat > "$TMPJS" << 'EOF'
 const fs = require('fs');
@@ -42,32 +48,27 @@ try {
     'total='        + (s.total        || 0),
   ].join('\n') + '\n';
   fs.appendFileSync(outputFile, lines);
+  process.stdout.write('outputs written ok\n');
 } catch (e) {
-  process.stderr.write('Output write failed: ' + e.message + '\n');
+  process.stderr.write('output write failed: ' + e.message + '\n');
 }
 EOF
 
   node "$TMPJS" "$TMPJSON" "$GITHUB_OUTPUT"
+  echo "Output node exit: $?"
   rm -f "$TMPJSON" "$TMPJS"
 fi
 
-# ── Human-readable validation output ─────────────────────────────────────────
+# ── Human-readable validation ─────────────────────────────────────────────────
 VALIDATE_CMD="node /app/src/cli.js validate $SPEC_PATH"
-if [ "$STRICT" = "true" ]; then
-  VALIDATE_CMD="$VALIDATE_CMD --strict"
-fi
-if [ -n "$CATEGORY" ]; then
-  VALIDATE_CMD="$VALIDATE_CMD --category $CATEGORY"
-fi
+[ "$STRICT" = "true" ] && VALIDATE_CMD="$VALIDATE_CMD --strict"
+[ -n "$CATEGORY" ] && VALIDATE_CMD="$VALIDATE_CMD --category $CATEGORY"
 
 eval "$VALIDATE_CMD"
 EXIT_CODE=$?
+echo "Validate exit: $EXIT_CODE"
 
-# ── Generate tests if requested ───────────────────────────────────────────────
-if [ "$GENERATE_TESTS" = "true" ]; then
-  echo ""
-  echo "Generating tests..."
+[ "$GENERATE_TESTS" = "true" ] && \
   node /app/src/cli.js generate "$SPEC_PATH" --output "$OUTPUT_DIR" --base-url "$BASE_URL"
-fi
 
 exit $EXIT_CODE
