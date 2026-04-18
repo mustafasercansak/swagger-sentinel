@@ -19,8 +19,8 @@ fi
 
 # ── Set GitHub Action outputs ─────────────────────────────────────────────────
 if [ -n "$GITHUB_OUTPUT" ]; then
-  TMPJSON=$(mktemp /tmp/sentinel.XXXXXX.json)
-  TMPJS=$(mktemp /tmp/sentinel.XXXXXX.js)
+  TMPJSON=$(mktemp /tmp/sentinelXXXXXX)
+  TMPJS=$(mktemp /tmp/sentinelXXXXXX)
 
   JSON_CMD="node /app/src/cli.js validate $SPEC_PATH --format json"
   if [ -n "$CATEGORY" ]; then
