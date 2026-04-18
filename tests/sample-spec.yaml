@@ -2,16 +2,26 @@ openapi: 3.0.3
 info:
   title: Sample Pet Store API
   version: 1.0.0
+  description: A sample API for testing swagger-sentinel with all rules satisfied.
   contact:
     name: API Team
     email: api@example.com
-  description: A sample API for testing swagger-sentinel
+    url: https://example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://example.com/terms
+
+externalDocs:
+  description: Find out more about our API
+  url: https://example.com/docs
 
 servers:
-  - url: http://localhost:3000/api/v1
+  - url: https://api.example.com/v1
+    description: Production server (HTTPS uses consistent security)
 
 paths:
-  /api/v1/pets:
+  /pets:
     get:
       operationId: listPets
       summary: List all pets
@@ -27,7 +37,7 @@ paths:
             maximum: 100
         - name: cursor
           in: query
-          description: Pagination cursor
+          description: Pagination cursor for pagination support
           schema:
             type: string
       responses:
@@ -43,11 +53,19 @@ paths:
                 properties:
                   items:
                     type: array
+                    maxItems: 100
                     items:
                       $ref: '#/components/schemas/Pet'
                   total:
                     type: integer
                     example: 42
+        '429':
+          description: Too many requests
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying
+              schema:
+                type: integer
 
     post:
       operationId: createPet
@@ -59,26 +77,15 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - name
-                - species
-              properties:
-                name:
-                  type: string
-                  maxLength: 100
-                  example: "Buddy"
-                species:
-                  type: string
-                  enum: [dog, cat, bird, fish]
-                  example: "dog"
-                age:
-                  type: integer
-                  minimum: 0
-                  maximum: 50
+              $ref: '#/components/schemas/PetCreate'
       responses:
         '201':
           description: Pet created
+          headers:
+            Location:
+              description: URL of the created resource
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -90,23 +97,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/pets/{petId}:
+  /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        description: The pet's unique identifier (UUID)
+        schema:
+          type: string
+          format: uuid
     get:
       operationId: getPet
       summary: Get a pet by ID
       tags:
         - Pets
-      parameters:
-        - name: petId
-          in: path
-          required: true
-          description: The pet's unique identifier
-          schema:
-            type: string
-            format: uuid
       responses:
         '200':
-          description: The pet
+          description: The pet detail
           content:
             application/json:
               schema:
@@ -123,17 +130,9 @@ paths:
       summary: Delete a pet
       tags:
         - Pets
-      parameters:
-        - name: petId
-          in: path
-          required: true
-          description: The pet's unique identifier
-          schema:
-            type: string
-            format: uuid
       responses:
         '204':
-          description: Pet deleted
+          description: Pet deleted successfully (No body)
 
 components:
   schemas:
@@ -150,6 +149,7 @@ components:
           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
         name:
           type: string
+          maxLength: 100
           example: "Buddy"
         species:
           type: string
@@ -157,10 +157,25 @@ components:
           example: "dog"
         age:
           type: integer
+          minimum: 0
+          maximum: 50
           example: 3
         createdAt:
           type: string
           format: date-time
+
+    PetCreate:
+      type: object
+      required:
+        - name
+        - species
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        species:
+          type: string
+          enum: [dog, cat, bird, fish]
 
     ErrorResponse:
       type: object
@@ -186,4 +201,4 @@ security:
 
 tags:
   - name: Pets
-    description: Pet management operations
+    description: Pet management operations and resource tracking
