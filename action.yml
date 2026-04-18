@@ -1,0 +1,55 @@
+name: 'Swagger Sentinel'
+description: 'Validate OpenAPI 3.x specs against a 130-point checklist and optionally generate Vitest tests'
+author: 'Mustafa Sercan Sak'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  spec-path:
+    description: 'Path to the OpenAPI spec file (.yaml or .json)'
+    required: true
+  strict:
+    description: 'Treat warnings as errors (fail the action on warnings)'
+    required: false
+    default: 'false'
+  category:
+    description: 'Validate only a specific category (Structure, Paths, Operations, Request, Response, Security, Documentation)'
+    required: false
+    default: ''
+  generate-tests:
+    description: 'Generate Vitest TypeScript tests from the spec'
+    required: false
+    default: 'false'
+  output-dir:
+    description: 'Output directory for generated tests (used when generate-tests is true)'
+    required: false
+    default: 'generated-tests'
+  base-url:
+    description: 'Base URL used in generated tests'
+    required: false
+    default: 'http://localhost:3000'
+
+outputs:
+  errors:
+    description: 'Number of failed error-level checks'
+  warnings:
+    description: 'Number of failed warning-level checks'
+  suggestions:
+    description: 'Number of failed suggestion-level checks'
+  passed:
+    description: 'Number of checks that passed'
+  total:
+    description: 'Total number of checks run'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    INPUT_SPEC_PATH: ${{ inputs.spec-path }}
+    INPUT_STRICT: ${{ inputs.strict }}
+    INPUT_CATEGORY: ${{ inputs.category }}
+    INPUT_GENERATE_TESTS: ${{ inputs.generate-tests }}
+    INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}
+    INPUT_BASE_URL: ${{ inputs.base-url }}

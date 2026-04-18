@@ -1,0 +1,42 @@
+name: Self-Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-sample:
+    name: Validate sample OpenAPI spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Swagger Sentinel
+        id: sentinel
+        uses: ./
+        with:
+          spec-path: tests/sample-spec.yaml
+          strict: false
+
+      - name: Print results summary
+        run: |
+          echo "Passed  : ${{ steps.sentinel.outputs.passed }}"
+          echo "Errors  : ${{ steps.sentinel.outputs.errors }}"
+          echo "Warnings: ${{ steps.sentinel.outputs.warnings }}"
+          echo "Total   : ${{ steps.sentinel.outputs.total }}"
+
+  unit-tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm install
+      - run: npm test
