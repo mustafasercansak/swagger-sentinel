@@ -10,6 +10,8 @@ import { generate } from './generators/index.js';
 import { formatResults } from './utils/formatter.js';
 import { loadConfig } from './utils/config.js';
 import { ValidationResult, SentinelConfig } from './types.js';
+import { RULE_REGISTRY, getRulesByCategory, getRuleExtendedInfo } from './rules/registry.js';
+
 
 import { fileURLToPath } from 'url';
 
@@ -25,16 +27,15 @@ program
   .description('Opinionated OpenAPI 3.x validator and test generator')
   .version(pkg.version);
 
-// =====================================================
-// VALIDATE
-// =====================================================
 program
   .command('validate <specFile>')
   .description('Validate an OpenAPI spec against the 130-point checklist')
   .option('--strict', 'Treat warnings as errors')
   .option('--format <format>', 'Output format: text, json', 'text')
   .option('--category <category>', 'Validate only a specific category')
-  .action((specFile: string, options: any) => {
+  .option('--rules <path>', 'Path to custom rules directory')
+  .action(async (specFile: string, options: any) => {
+
     try {
       const config = loadConfig();
       const mergedOptions = { 
@@ -42,8 +43,14 @@ program
         strict: options.strict || config.strict || false 
       };
       
+      let customRules: any[] = [];
+      if (options.rules) {
+        const { loadCustomRules } = await import('./rules/manager.js');
+        customRules = await loadCustomRules(options.rules);
+      }
+
       const spec = loadSpec(specFile);
-      const results = validate(spec, { ...mergedOptions, config });
+      const results = await validate(spec, { ...mergedOptions, config, customRules });
       const output = formatResults(results, options.format);
 
       if (options.format === 'json') {
@@ -121,10 +128,10 @@ program
 
     console.log(chalk.cyan(`\n👁  Watching ${specFile} for changes...\n`));
 
-    const runValidation = () => {
+    const runValidation = async () => {
       try {
         const spec = loadSpec(specFile);
-        const results = validate(spec, { ...mergedOptions, config });
+        const results = await validate(spec, { ...mergedOptions, config });
         console.log(chalk.gray(`\n--- ${new Date().toLocaleTimeString()} ---`));
         printResults(results, mergedOptions.strict);
       } catch (err: any) {
@@ -251,5 +258,59 @@ function printResults(results: ValidationResult[], strict: boolean) {
   if (suggestions.length > 0) console.log(chalk.blue(`  ${suggestions.length} suggestion(s)`));
   console.log('');
 }
+
+// =====================================================
+// RULES REGISTRY
+// =====================================================
+program
+  .command('rules [id]')
+  .description('List and explore the 130-point validation checklist')
+  .option('--category <name>', 'Filter rules by category')
+  .action((id: string | undefined, options: any) => {
+    if (id) {
+      const info = getRuleExtendedInfo(id);
+      if (info) {
+        console.log(`\n${info}\n`);
+      } else {
+        console.error(chalk.red(`\n✗ Rule not found: ${id}\n`));
+        process.exit(1);
+      }
+      return;
+    }
+
+    const categories = ['Structure', 'Paths', 'Operations', 'Request', 'Response', 'Security', 'Documentation'];
+    const filterCat = options.category;
+
+    console.log(chalk.cyan(`\nOpenAPI 130-Point Checklist:\n`));
+
+    for (const cat of categories) {
+      if (filterCat && cat.toLowerCase() !== filterCat.toLowerCase()) continue;
+      
+      const rules = getRulesByCategory(cat);
+      console.log(chalk.white.bold(`  ${cat} (${rules.length} checks)`));
+      
+      for (const rule of rules) {
+        const symbol = rule.isAutomated ? chalk.green('✅') : chalk.blue('👁 ');
+        const sevColor = rule.severity === 'error' ? chalk.red : (rule.severity === 'warning' ? chalk.yellow : chalk.blue);
+        console.log(`    ${symbol} ${chalk.gray(rule.id.padEnd(6))} ${rule.title.padEnd(45)} ${sevColor(`(${rule.severity})`)}`);
+      }
+      console.log('');
+    }
+
+    if (!id) {
+      console.log(chalk.gray(`Use 'swagger-sentinel rules <ID>' to see full descriptions.\n`));
+    }
+  });
+
+// =====================================================
+// SPECTRAL EXPORT
+// =====================================================
+program
+  .command('export-spectral')
+  .description('Export automated rules as a Spectral YAML ruleset')
+  .action(async () => {
+    const { generateSpectralRuleset } = await import('./rules/spectral.js');
+    console.log(generateSpectralRuleset());
+  });
 
 program.parse();

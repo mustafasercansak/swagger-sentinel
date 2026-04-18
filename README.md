@@ -23,6 +23,17 @@ swagger-sentinel validate api.yaml
 swagger-sentinel validate api.yaml --strict       # warnings = errors
 swagger-sentinel validate api.yaml --format json   # CI-friendly output
 swagger-sentinel validate api.yaml --category paths # validate one category
+swagger-sentinel validate api.yaml --rules ./rules # load custom rules
+```
+
+### Rules Registry
+
+Explore the 130-point checklist directly from your terminal:
+
+```bash
+swagger-sentinel rules                 # List all rules by category
+swagger-sentinel rules --category security # Filter by category
+swagger-sentinel rules P16             # Show details for a specific rule
 ```
 
 ### Generate Tests
@@ -54,6 +65,14 @@ swagger-sentinel syntax api.yaml    # quick syntax check
 swagger-sentinel tags api.yaml      # list all operation tags
 ```
 
+### Spectral Export
+
+Export your sentinel rules to a Spectral-compatible YAML ruleset:
+
+```bash
+swagger-sentinel export-spectral > .spectral.yaml
+```
+
 ## Validation Categories
 
 | Category | Checks | Automated |
@@ -83,13 +102,41 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Validate
         run: npx swagger-sentinel validate specs/api.yaml --strict
       - name: Generate Tests
         run: npx swagger-sentinel generate specs/api.yaml --output tests/
       - name: Run Tests
         run: npx vitest run tests/
+```
+
+## Custom Rules
+
+You can extend **swagger-sentinel** with your own domain-specific rules. Create a directory (e.g., `./sentinel-rules`) and add `.js` or `.mjs` files:
+
+```javascript
+// ./sentinel-rules/no-internal-paths.js
+export default function validate(spec) {
+  const results = [];
+  for (const path in spec.paths) {
+    if (path.startsWith('/internal')) {
+      results.push({
+        id: 'CUSTOM01',
+        category: 'Custom',
+        severity: 'error',
+        passed: false,
+        message: `Internal path detected: ${path}`
+      });
+    }
+  }
+  return results;
+}
+```
+
+Then run with the `--rules` flag:
+```bash
+swagger-sentinel validate api.yaml --rules ./sentinel-rules
 ```
 
 ## Programmatic Usage (TypeScript/ESM)

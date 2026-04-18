@@ -11,9 +11,10 @@ import { OpenAPISpec, ValidationResult, ValidatorFunction, SentinelConfig } from
  * Run all validation categories against a spec.
  * Returns a flat array of check results.
  */
-export function validate(spec: OpenAPISpec, options: { category?: string; config?: SentinelConfig } = {}): ValidationResult[] {
+export async function validate(spec: OpenAPISpec, options: { category?: string; config?: SentinelConfig; customRules?: any[] } = {}): Promise<ValidationResult[]> {
   const categoryFilter = options.category ? options.category.toLowerCase() : null;
   const config = options.config || {};
+  const customRules = options.customRules || [];
 
   const categories: Record<string, ValidatorFunction> = {
     structure: validateStructure,
@@ -41,6 +42,13 @@ export function validate(spec: OpenAPISpec, options: { category?: string; config
         message: `${name} validation crashed: ${err.message}`,
       });
     }
+  }
+
+  // Inject Custom Rules
+  if (customRules.length > 0) {
+    const { runCustomRules } = await import('../rules/manager.js');
+    const customResults = await runCustomRules(spec, customRules);
+    rawResults.push(...customResults);
   }
 
   // Apply configuration (ignores and overrides)
