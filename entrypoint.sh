@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 SPEC_PATH="${INPUT_SPEC_PATH}"
 STRICT="${INPUT_STRICT:-false}"
@@ -18,18 +17,18 @@ if [ ! -f "$SPEC_PATH" ]; then
   exit 1
 fi
 
-# ── Collect structured output for action outputs ──────────────────────────────
-TMPFILE=$(mktemp /tmp/sentinel-json.XXXXXX)
+# ── Set GitHub Action outputs ─────────────────────────────────────────────────
+if [ -n "$GITHUB_OUTPUT" ]; then
+  TMPJSON=$(mktemp /tmp/sentinel.XXXXXX.json)
+  TMPJS=$(mktemp /tmp/sentinel.XXXXXX.js)
 
-JSON_CMD="node /app/src/cli.js validate $SPEC_PATH --format json"
-if [ -n "$CATEGORY" ]; then
-  JSON_CMD="$JSON_CMD --category $CATEGORY"
-fi
+  JSON_CMD="node /app/src/cli.js validate $SPEC_PATH --format json"
+  if [ -n "$CATEGORY" ]; then
+    JSON_CMD="$JSON_CMD --category $CATEGORY"
+  fi
+  eval "$JSON_CMD" > "$TMPJSON" 2>/dev/null
 
-eval "$JSON_CMD" > "$TMPFILE" 2>/dev/null || true
-
-if [ -s "$TMPFILE" ] && [ -n "$GITHUB_OUTPUT" ]; then
-  node - "$TMPFILE" "$GITHUB_OUTPUT" <<'JSEOF'
+  cat > "$TMPJS" << 'EOF'
 const fs = require('fs');
 const [,, jsonFile, outputFile] = process.argv;
 try {
@@ -43,11 +42,14 @@ try {
     'total='        + (s.total        || 0),
   ].join('\n') + '\n';
   fs.appendFileSync(outputFile, lines);
-} catch (_) {}
-JSEOF
-fi
+} catch (e) {
+  process.stderr.write('Output write failed: ' + e.message + '\n');
+}
+EOF
 
-rm -f "$TMPFILE"
+  node "$TMPJS" "$TMPJSON" "$GITHUB_OUTPUT"
+  rm -f "$TMPJSON" "$TMPJS"
+fi
 
 # ── Human-readable validation output ─────────────────────────────────────────
 VALIDATE_CMD="node /app/src/cli.js validate $SPEC_PATH"
