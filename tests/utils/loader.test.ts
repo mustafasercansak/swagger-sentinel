@@ -20,12 +20,8 @@ describe("loader.ts", () => {
 				paths: {},
 			};
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-
-			const mockParser = {
-				dereference: vi.fn().mockResolvedValue(mockSpec),
-			};
-			vi.mocked(SwaggerParser).mockImplementation(
-				() => mockParser as unknown as SwaggerParser,
+			vi.spyOn(SwaggerParser.prototype, "dereference").mockResolvedValue(
+				mockSpec as never,
 			);
 
 			const spec = await loadSpec("test.json");
@@ -43,12 +39,8 @@ describe("loader.ts", () => {
 				info: { title: "Test", version: "1.0.0" },
 			};
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-
-			const mockParser = {
-				dereference: vi.fn().mockResolvedValue(mockSpec),
-			};
-			vi.mocked(SwaggerParser).mockImplementation(
-				() => mockParser as unknown as SwaggerParser,
+			vi.spyOn(SwaggerParser.prototype, "dereference").mockResolvedValue(
+				mockSpec as never,
 			);
 
 			await expect(loadSpec("test.json")).rejects.toThrow(

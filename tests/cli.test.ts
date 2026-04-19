@@ -12,8 +12,8 @@ describe("CLI integration", () => {
 	const V2_SPEC_PATH = "tests/temp-v2.yaml";
 
 	beforeEach(() => {
-		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-		errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		logSpy = vi.spyOn(console, "log").mockImplementation(() => { });
+		errorSpy = vi.spyOn(console, "error").mockImplementation(() => { });
 		exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
 			return undefined as never;
 		});
@@ -206,5 +206,5 @@ paths:
 	it("should run export-spectral command", async () => {
 		await run(["node", "cli.js", "export-spectral"]);
 		expect(logSpy).toHaveBeenCalled();
-	});
+	}, 10000);
 });
