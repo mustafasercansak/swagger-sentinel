@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { loadConfig } from "../../src/utils/config.js";
 

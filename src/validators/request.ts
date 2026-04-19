@@ -1,16 +1,11 @@
 import type {
 	OpenAPIParameter,
 	OpenAPIRequestBody,
-	OpenAPIResponse,
 	OpenAPISchema,
 	OpenAPISpec,
 	ValidationResult,
 } from "../types.js";
-import {
-	getAllOperations,
-	type OperationEntry,
-	resolveRef,
-} from "../utils/loader.js";
+import { getAllOperations, resolveRef } from "../utils/loader.js";
 
 /**
  * Category: Request Validation (16 checks, 10 automated)
@@ -120,7 +115,8 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			for (const mediaType of Object.values(content)) {
 				let schema = mediaType.schema || {};
-				if (schema.$ref) schema = resolveRef(spec, schema.$ref) || schema;
+				if (schema.$ref)
+					schema = (resolveRef(spec, schema.$ref) as OpenAPISchema) || schema;
 
 				if (schema.properties) {
 					for (const [propName, propSchema] of Object.entries(
@@ -212,7 +208,8 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			for (const mediaType of Object.values(content)) {
 				let schema = mediaType.schema || {};
-				if (schema.$ref) schema = resolveRef(spec, schema.$ref) || schema;
+				if (schema.$ref)
+					schema = (resolveRef(spec, schema.$ref) as OpenAPISchema) || schema;
 				if (
 					schema.type === "object" &&
 					schema.properties &&
@@ -326,7 +323,8 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			for (const mediaType of Object.values(content)) {
 				let schema = mediaType.schema || {};
-				if (schema.$ref) schema = resolveRef(spec, schema.$ref) || schema;
+				if (schema.$ref)
+					schema = (resolveRef(spec, schema.$ref) as OpenAPISchema) || schema;
 				if (schema.properties) {
 					for (const [propName, propSchema] of Object.entries(
 						schema.properties,
@@ -455,7 +453,8 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			for (const mt of Object.values(content)) {
 				let schema = mt.schema || {};
-				if (schema.$ref) schema = resolveRef(spec, schema.$ref) || schema;
+				if (schema.$ref)
+					schema = (resolveRef(spec, schema.$ref) as OpenAPISchema) || schema;
 				checkLargeObject(schema, `${op.method} ${op.path} body`);
 			}
 		}
@@ -507,7 +506,8 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			for (const mt of Object.values(content)) {
 				let schema = mt.schema || {};
-				if (schema.$ref) schema = resolveRef(spec, schema.$ref) || schema;
+				if (schema.$ref)
+					schema = (resolveRef(spec, schema.$ref) as OpenAPISchema) || schema;
 				checkSensitiveExamples(schema, `${op.method} ${op.path} body`);
 			}
 		}

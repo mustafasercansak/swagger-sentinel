@@ -6,13 +6,16 @@ function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-function spec(paths: any, components: any = {}) {
+function spec(
+	paths: Record<string, unknown>,
+	components: Record<string, unknown> = {},
+): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
 		info: { title: "T", version: "1.0.0" },
 		paths,
 		components,
-	};
+	} as unknown as OpenAPISpec;
 }
 
 describe("validateRequests", () => {
@@ -32,7 +35,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R50")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R50")?.passed).toBe(true);
 	});
 
 	it("R50 fails when query string param has no maxLength", () => {
@@ -44,7 +47,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R50")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R50")?.passed).toBe(false);
 	});
 
 	// R51 numeric min/max
@@ -59,7 +62,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R51")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R51")?.passed).toBe(false);
 	});
 
 	it("R51 passes when numeric param has minimum", () => {
@@ -77,7 +80,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R51")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R51")?.passed).toBe(true);
 	});
 
 	// R53 request body required fields
@@ -99,7 +102,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R53")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R53")?.passed).toBe(false);
 	});
 
 	it("R53 passes when required fields defined", () => {
@@ -121,7 +124,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R53")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R53")?.passed).toBe(true);
 	});
 
 	// R54 content-type required
@@ -134,8 +137,8 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R54")?.passed).toBe(false);
-		expect(check(validateRequests(s as any), "R54")?.severity).toBe("error");
+		expect(check(validateRequests(s), "R54")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R54")?.severity).toBe("error");
 	});
 
 	// R55 enum casing
@@ -154,7 +157,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R55")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R55")?.passed).toBe(true);
 	});
 
 	it("R55 fails when enum mixes upper and lower case", () => {
@@ -172,7 +175,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R55")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R55")?.passed).toBe(false);
 	});
 
 	// R57 format hints
@@ -185,7 +188,7 @@ describe("validateRequests", () => {
 				},
 			},
 		);
-		expect(check(validateRequests(s as any), "R57")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R57")?.passed).toBe(true);
 	});
 
 	it("R57 fails when email field has no format", () => {
@@ -195,10 +198,8 @@ describe("validateRequests", () => {
 				schemas: { User: { properties: { email: { type: "string" } } } },
 			},
 		);
-		expect(check(validateRequests(s as any), "R57")?.passed).toBe(false);
-		expect(check(validateRequests(s as any), "R57")?.severity).toBe(
-			"suggestion",
-		);
+		expect(check(validateRequests(s), "R57")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R57")?.severity).toBe("suggestion");
 	});
 
 	// R58 binary in multipart
@@ -220,7 +221,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R58")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R58")?.passed).toBe(true);
 	});
 
 	it("R58 fails when binary field is in application/json", () => {
@@ -241,7 +242,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R58")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R58")?.passed).toBe(false);
 	});
 
 	// R59 ID parameters define format or pattern
@@ -261,7 +262,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R59")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R59")?.passed).toBe(true);
 	});
 
 	it("R59 fails when ID parameter has no format", () => {
@@ -280,7 +281,7 @@ describe("validateRequests", () => {
 				},
 			},
 		});
-		expect(check(validateRequests(s as any), "R59")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R59")?.passed).toBe(false);
 	});
 
 	// R60 Large body objects define maxProperties
@@ -302,7 +303,7 @@ describe("validateRequests", () => {
 				},
 			},
 		);
-		expect(check(validateRequests(s as any), "R60")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R60")?.passed).toBe(true);
 	});
 
 	it("R60 fails when large object (20+ props) missing maxProperties", () => {
@@ -322,7 +323,7 @@ describe("validateRequests", () => {
 				},
 			},
 		);
-		expect(check(validateRequests(s as any), "R60")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R60")?.passed).toBe(false);
 	});
 
 	// R61 No examples for sensitive fields
@@ -333,7 +334,7 @@ describe("validateRequests", () => {
 				schemas: { User: { properties: { password: { type: "string" } } } },
 			},
 		);
-		expect(check(validateRequests(s as any), "R61")?.passed).toBe(true);
+		expect(check(validateRequests(s), "R61")?.passed).toBe(true);
 	});
 
 	it('R61 fails when "secret" field has an example', () => {
@@ -347,6 +348,6 @@ describe("validateRequests", () => {
 				},
 			},
 		);
-		expect(check(validateRequests(s as any), "R61")?.passed).toBe(false);
+		expect(check(validateRequests(s), "R61")?.passed).toBe(false);
 	});
 });

@@ -82,7 +82,9 @@ describe("Data Faker Utility", () => {
 		});
 
 		it("should handle non-objects", () => {
-			expect(generateFakeObject({ type: "string" }, {} as any)).toBe("{}");
+			expect(
+				generateFakeObject({ type: "string" }, {} as unknown as OpenAPISpec),
+			).toBe("{}");
 		});
 	});
 });

@@ -1,7 +1,7 @@
+import fs from "node:fs";
 import SwaggerParser from "@apidevtools/json-schema-ref-parser";
-import fs from "fs";
-import path from "path";
 import { describe, expect, it, vi } from "vitest";
+import type { OpenAPISpec } from "../../src/types.js";
 import {
 	getAllOperations,
 	loadSpec,
@@ -20,11 +20,9 @@ describe("loader.ts", () => {
 				paths: {},
 			};
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-
-			const mockParser = {
-				dereference: vi.fn().mockResolvedValue(mockSpec),
-			};
-			vi.mocked(SwaggerParser).mockImplementation(() => mockParser as any);
+			vi.spyOn(SwaggerParser.prototype, "dereference").mockResolvedValue(
+				mockSpec as never,
+			);
 
 			const spec = await loadSpec("test.json");
 			expect(spec.openapi).toBe("3.0.0");
@@ -41,11 +39,9 @@ describe("loader.ts", () => {
 				info: { title: "Test", version: "1.0.0" },
 			};
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-
-			const mockParser = {
-				dereference: vi.fn().mockResolvedValue(mockSpec),
-			};
-			vi.mocked(SwaggerParser).mockImplementation(() => mockParser as any);
+			vi.spyOn(SwaggerParser.prototype, "dereference").mockResolvedValue(
+				mockSpec as never,
+			);
 
 			await expect(loadSpec("test.json")).rejects.toThrow(
 				"Unsupported OpenAPI version",
@@ -60,7 +56,7 @@ describe("loader.ts", () => {
 					User: { type: "object" },
 				},
 			},
-		} as any;
+		} as unknown as OpenAPISpec;
 
 		it("should resolve a valid reference", () => {
 			const resolved = resolveRef(spec, "#/components/schemas/User");
@@ -85,7 +81,7 @@ describe("loader.ts", () => {
 						put: { operationId: "updateProduct" },
 					},
 				},
-			} as any;
+			} as unknown as OpenAPISpec;
 
 			const ops = getAllOperations(spec);
 			expect(ops).toHaveLength(3);

@@ -1,6 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
 import SwaggerParser from "@apidevtools/json-schema-ref-parser";
-import fs from "fs";
-import path from "path";
 import type {
 	OpenAPIOperation,
 	OpenAPIPathItem,
@@ -20,7 +20,7 @@ export async function loadSpec(filePath: string): Promise<OpenAPISpec> {
 
 	try {
 		const parser = new SwaggerParser();
-		const spec = (await parser.dereference(resolved)) as any;
+		const spec = (await parser.dereference(resolved)) as OpenAPISpec;
 
 		if (!spec || typeof spec !== "object") {
 			throw new Error(
@@ -43,21 +43,28 @@ export async function loadSpec(filePath: string): Promise<OpenAPISpec> {
 		}
 
 		return spec as OpenAPISpec;
-	} catch (err: any) {
-		throw new Error(`Failed to load OpenAPI spec: ${err.message}`);
+	} catch (err: unknown) {
+		const error = err as Error;
+		throw new Error(`Failed to load OpenAPI spec: ${error.message}`);
 	}
 }
 
 /**
  * Resolve $ref within a spec (fallback for cases where dereference wasn't used)
  */
-export function resolveRef(spec: OpenAPISpec, ref: string | undefined): any {
+export function resolveRef(
+	spec: OpenAPISpec,
+	ref: string | undefined,
+): unknown {
 	if (!ref) return null;
 	if (ref.startsWith("#/")) {
 		const parts = ref.replace("#/", "").split("/");
-		let current: any = spec;
+		let current: Record<string, unknown> | null | undefined =
+			spec as unknown as Record<string, unknown>;
 		for (const part of parts) {
-			current = current?.[part];
+			current = (current as Record<string, unknown>)?.[part] as
+				| Record<string, unknown>
+				| undefined;
 		}
 		return current;
 	}

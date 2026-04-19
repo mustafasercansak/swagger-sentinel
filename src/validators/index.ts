@@ -1,3 +1,4 @@
+import type { CustomValidatorFunction } from "../rules/types.js";
 import type {
 	OpenAPISpec,
 	SentinelConfig,
@@ -21,7 +22,7 @@ export async function validate(
 	options: {
 		category?: string;
 		config?: SentinelConfig;
-		customRules?: any[];
+		customRules?: unknown[];
 	} = {},
 ): Promise<ValidationResult[]> {
 	const categoryFilter = options.category
@@ -47,13 +48,14 @@ export async function validate(
 		try {
 			const checks = validator(spec);
 			rawResults = rawResults.concat(checks);
-		} catch (err: any) {
+		} catch (err: unknown) {
+			const error = err as Error;
 			rawResults.push({
 				id: `${name.toUpperCase()}_ERR`,
 				category: name,
 				severity: "error",
 				passed: false,
-				message: `${name} validation crashed: ${err.message}`,
+				message: `${name} validation crashed: ${error.message}`,
 			});
 		}
 	}
@@ -61,7 +63,10 @@ export async function validate(
 	// Inject Custom Rules
 	if (customRules.length > 0) {
 		const { runCustomRules } = await import("../rules/manager.js");
-		const customResults = await runCustomRules(spec, customRules);
+		const customResults = await runCustomRules(
+			spec,
+			customRules as CustomValidatorFunction[],
+		);
 		rawResults.push(...customResults);
 	}
 

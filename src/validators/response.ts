@@ -1,9 +1,9 @@
-import type { OpenAPISchema, OpenAPISpec, ValidationResult } from "../types.js";
-import {
-	getAllOperations,
-	type OperationEntry,
-	resolveRef,
-} from "../utils/loader.js";
+import type {
+	OpenAPIResponse,
+	OpenAPISpec,
+	ValidationResult,
+} from "../types.js";
+import { getAllOperations, resolveRef } from "../utils/loader.js";
 
 /**
  * Category: Response Design (20 checks, 10 automated)
@@ -33,16 +33,20 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
 			if (code.startsWith("4") || code.startsWith("5")) {
 				const content =
 					resp.content ||
-					(resp.$ref ? (resolveRef(spec, resp.$ref) || {}).content : null);
+					(resp.$ref
+						? (resolveRef(spec, resp.$ref) as OpenAPIResponse)?.content
+						: null);
 				if (!content && code.startsWith("4") && code !== "404") {
 					opsWithout4xxBody.push(`${label} → ${code}`);
 				}
 
 				// Track error schema refs
 				if (content) {
-					for (const mt of Object.values(content) as any[]) {
-						if (mt.schema && (mt.schema as any).$ref) {
-							errorSchemaRefs.add((mt.schema as any).$ref);
+					for (const mt of Object.values(content) as Array<{
+						schema?: { $ref?: string };
+					}>) {
+						if (mt.schema?.$ref) {
+							errorSchemaRefs.add(mt.schema.$ref);
 						}
 					}
 				}
@@ -137,12 +141,12 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
 	// R75: 429 has rate-limit headers
 	const ops429: string[] = [];
 	for (const op of ops) {
-		const resp429 = (op.operation.responses || {})["429"];
+		const resp429 = op.operation.responses?.["429"];
 		if (resp429) {
 			let headers = resp429.headers || {};
 			if (resp429.$ref) {
 				const refResp = resolveRef(spec, resp429.$ref);
-				if (refResp) headers = refResp.headers || {};
+				if (refResp) headers = (refResp as OpenAPIResponse).headers || {};
 			}
 			const hasRateHeaders = [
 				"Retry-After",
@@ -194,12 +198,12 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
 	// R77: 201 Created responses include a Location header
 	const created201NoLocation: string[] = [];
 	for (const op of ops) {
-		const resp201 = (op.operation.responses || {})["201"];
+		const resp201 = op.operation.responses?.["201"];
 		if (resp201) {
 			let headers = resp201.headers || {};
 			if (resp201.$ref) {
 				const refResp = resolveRef(spec, resp201.$ref);
-				if (refResp) headers = refResp.headers || {};
+				if (refResp) headers = (refResp as OpenAPIResponse).headers || {};
 			}
 			const hasLocation = Object.keys(headers).some(
 				(h) => h.toLowerCase() === "location",
@@ -225,7 +229,7 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
 	const listNoCount: string[] = [];
 	for (const op of ops) {
 		if (op.method !== "GET") continue;
-		const resp200 = (op.operation.responses || {})["200"];
+		const resp200 = op.operation.responses?.["200"];
 		if (!resp200) continue;
 		const content = resp200.content || {};
 		for (const mediaType of Object.values(content)) {
@@ -234,7 +238,7 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
 				let headers = resp200.headers || {};
 				if (resp200.$ref) {
 					const refResp = resolveRef(spec, resp200.$ref);
-					if (refResp) headers = refResp.headers || {};
+					if (refResp) headers = (refResp as OpenAPIResponse).headers || {};
 				}
 				const hasTotalCount = Object.keys(headers).some(
 					(h) =>
@@ -268,13 +272,13 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
 		if (op.method !== "GET") continue;
 		const pathHasParam = op.path.endsWith("}");
 		if (!pathHasParam) continue;
-		const resp200 = (op.operation.responses || {})["200"];
+		const resp200 = op.operation.responses?.["200"];
 		if (!resp200) continue;
 
 		let headers = resp200.headers || {};
 		if (resp200.$ref) {
 			const refResp = resolveRef(spec, resp200.$ref);
-			if (refResp) headers = refResp.headers || {};
+			if (refResp) headers = (refResp as OpenAPIResponse).headers || {};
 		}
 		const hasEtag = Object.keys(headers).some(
 			(h) => h.toLowerCase() === "etag" || h.toLowerCase() === "last-modified",
@@ -321,7 +325,7 @@ export function validateResponses(spec: OpenAPISpec): ValidationResult[] {
 	// R81: 415 Unsupported Media Type suggested for operations with requestBody
 	const missing415: string[] = [];
 	for (const op of ops) {
-		if (op.operation.requestBody && !(op.operation.responses || {})["415"]) {
+		if (op.operation.requestBody && !op.operation.responses?.["415"]) {
 			missing415.push(`${op.method} ${op.path}`);
 		}
 	}

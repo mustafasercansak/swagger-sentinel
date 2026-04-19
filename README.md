@@ -13,7 +13,7 @@ Despite the name, swagger-sentinel works with any OpenAPI 3.x spec — "Swagger"
 ```bash
 npm install -g swagger-sentinel
 # or use directly with npx
-npx swagger-sentinel validate api.yaml
+npx swagger-sentinel validate your-api.yaml
 ```
 
 ## Commands
@@ -23,11 +23,11 @@ npx swagger-sentinel validate api.yaml
 Run the 130-point checklist against your spec:
 
 ```bash
-swagger-sentinel validate api.yaml
-swagger-sentinel validate api.yaml --strict       # warnings = errors
-swagger-sentinel validate api.yaml --format json   # CI-friendly output
-swagger-sentinel validate api.yaml --category paths # validate one category
-swagger-sentinel validate api.yaml --rules ./rules # load custom rules
+swagger-sentinel validate your-api.yaml
+swagger-sentinel validate your-api.yaml --strict       # warnings = errors
+swagger-sentinel validate your-api.yaml --format json   # CI-friendly output
+swagger-sentinel validate your-api.yaml --category paths # validate one category
+swagger-sentinel validate your-api.yaml --rules ./rules # load custom rules
 ```
 
 ### Rules Registry
@@ -45,10 +45,10 @@ swagger-sentinel rules P16             # Show details for a specific rule
 Generate **TypeScript** Vitest test suites from your spec. Now includes **Faker.js** integration for realistic, schema-driven test data:
  
  ```bash
- swagger-sentinel generate api.yaml --output ./tests/
- swagger-sentinel generate api.yaml --tag Pets           # specific tag only
- swagger-sentinel generate api.yaml --base-url http://localhost:8080
- swagger-sentinel generate api.yaml --seed 123          # consistent random data
+ swagger-sentinel generate your-api.yaml --output ./tests/
+ swagger-sentinel generate your-api.yaml --tag Pets           # specific tag only
+ swagger-sentinel generate your-api.yaml --base-url http://localhost:8080
+ swagger-sentinel generate your-api.yaml --seed 123          # consistent random data
  ```
  
  The generator automatically maps semantic field names (like `email`, `firstName`, `birthDate`) to realistic mock data.
@@ -58,15 +58,15 @@ Generate **TypeScript** Vitest test suites from your spec. Now includes **Faker.
 Re-validate on every file change:
 
 ```bash
-swagger-sentinel watch api.yaml
-swagger-sentinel watch api.yaml --strict
+swagger-sentinel watch your-api.yaml
+swagger-sentinel watch your-api.yaml --strict
 ```
 
 ### Utilities
 
 ```bash
-swagger-sentinel syntax api.yaml    # quick syntax check
-swagger-sentinel tags api.yaml      # list all operation tags
+swagger-sentinel syntax your-api.yaml    # quick syntax check
+swagger-sentinel tags your-api.yaml      # list all operation tags
 ```
 
 ### Spectral Export
@@ -152,7 +152,7 @@ swagger-sentinel validate api.yaml --rules ./sentinel-rules
 ```typescript
 import { loadSpec, validate, generate } from 'swagger-sentinel';
 
-const spec = loadSpec('api.yaml');
+const spec = loadSpec('your-api.yaml');
 const results = validate(spec);
 const testFiles = generate(spec, { output: './tests' });
 ```
