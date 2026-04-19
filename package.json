@@ -1,6 +1,6 @@
 {
 	"name": "swagger-sentinel",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist",
 	"type": "module",
 	"main": "dist/index.js",
@@ -45,7 +45,7 @@
 		"js-yaml": "^4.1.0"
 	},
 	"engines": {
-		"node": ">=18.0.0"
+		"node": ">=24.0.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.12",
