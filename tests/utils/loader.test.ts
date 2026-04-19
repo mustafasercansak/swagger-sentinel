@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import SwaggerParser from "@apidevtools/json-schema-ref-parser";
 import { describe, expect, it, vi } from "vitest";
+import type { OpenAPISpec } from "../../src/types.js";
 import {
 	getAllOperations,
 	loadSpec,
 	resolveRef,
 } from "../../src/utils/loader.js";
-import { OpenAPISpec } from "../../src/types.js";
 
 vi.mock("fs");
 vi.mock("@apidevtools/json-schema-ref-parser");
@@ -25,7 +25,7 @@ describe("loader.ts", () => {
 				dereference: vi.fn().mockResolvedValue(mockSpec),
 			};
 			vi.mocked(SwaggerParser).mockImplementation(
-				function () { return mockParser as unknown as SwaggerParser; },
+				() => mockParser as unknown as SwaggerParser,
 			);
 
 			const spec = await loadSpec("test.json");
@@ -48,7 +48,7 @@ describe("loader.ts", () => {
 				dereference: vi.fn().mockResolvedValue(mockSpec),
 			};
 			vi.mocked(SwaggerParser).mockImplementation(
-				function () { return mockParser as unknown as SwaggerParser; },
+				() => mockParser as unknown as SwaggerParser,
 			);
 
 			await expect(loadSpec("test.json")).rejects.toThrow(
