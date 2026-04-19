@@ -1,51 +1,59 @@
 {
-  "name": "swagger-sentinel",
-  "version": "1.0.0",
-  "description": "Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "swagger-sentinel": "dist/cli.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc -w",
-    "dev": "tsx src/cli.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "validate": "tsx src/cli.ts validate",
-    "generate": "tsx src/cli.ts generate",
-    "prepublishOnly": "npm run build"
-  },
-  "keywords": [
-    "openapi",
-    "swagger",
-    "validator",
-    "api",
-    "testing",
-    "vitest",
-    "spec-first"
-  ],
-  "author": "Mustafa Sercan Sak",
-  "license": "MIT",
-  "dependencies": {
-    "@faker-js/faker": "^10.4.0",
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1",
-    "chalk": "^4.1.2",
-    "chokidar": "^3.6.0",
-    "commander": "^12.1.0",
-    "js-yaml": "^4.1.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
-    "@types/node": "^25.6.0",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3",
-    "vitest": "^3.2.4"
-  }
+	"name": "swagger-sentinel",
+	"version": "1.0.0",
+	"description": "Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"bin": {
+		"swagger-sentinel": "dist/cli.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"build:watch": "tsc -w",
+		"dev": "tsx src/cli.ts",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"type-check": "tsc --noEmit",
+		"validate": "tsx src/cli.ts validate",
+		"generate": "tsx src/cli.ts generate",
+		"prepublishOnly": "npm run build && npm run type-check && npm test"
+	},
+	"keywords": [
+		"openapi",
+		"swagger",
+		"validator",
+		"api",
+		"testing",
+		"vitest",
+		"spec-first"
+	],
+	"author": "Mustafa Sercan Sak",
+	"license": "MIT",
+	"dependencies": {
+		"@apidevtools/json-schema-ref-parser": "^15.3.5",
+		"@faker-js/faker": "^10.4.0",
+		"ajv": "^8.17.1",
+		"ajv-formats": "^3.0.1",
+		"chalk": "^4.1.2",
+		"chokidar": "^3.6.0",
+		"commander": "^12.1.0",
+		"js-yaml": "^4.1.0"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.12",
+		"@types/js-yaml": "^4.0.9",
+		"@types/node": "^25.6.0",
+		"@vitest/coverage-v8": "^3.2.4",
+		"tsx": "^4.21.0",
+		"typescript": "^6.0.3",
+		"vitest": "^3.2.4"
+	}
 }

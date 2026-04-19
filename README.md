@@ -94,6 +94,8 @@ See [docs/CHECKLIST.md](docs/CHECKLIST.md) for the full checklist.
 
 ## CI Integration
 
+Swagger Sentinel is built for CI/CD. It natively supports **GitHub Actions Annotations** (to show errors directly on your PR code) and **Job Summaries**.
+
 ```yaml
 name: API Contract
 on:
@@ -104,16 +106,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: Validate
-        run: npx swagger-sentinel validate specs/api.yaml --strict
-      - name: Generate Tests
-        run: npx swagger-sentinel generate specs/api.yaml --output tests/
-      - name: Run Tests
-        run: npx vitest run tests/
+      - name: Sentinel Validate
+        run: |
+          npx swagger-sentinel validate specs/api.yaml \
+            --strict \
+            --github-annotations \
+            --summary results.md
+      - name: Upload Summary
+        if: always()
+        run: cat results.md >> $GITHUB_STEP_SUMMARY
 ```
+
+The `--github-annotations` flag will automatically highlight issues on the exact lines of your YAML file in the GitHub PR view.
 
 ## Custom Rules
 
