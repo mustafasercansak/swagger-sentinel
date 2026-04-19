@@ -1,19 +1,18 @@
 import fs from "node:fs";
-import path from "node:path";
 import chalk from "chalk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { run } from "../src/cli.js";
 
 describe("CLI integration", () => {
-	let logSpy: any;
-	let errorSpy: any;
-	let exitSpy: any;
+	let logSpy: ReturnType<typeof vi.spyOn>;
+	let _errorSpy: ReturnType<typeof vi.spyOn>;
+	let exitSpy: ReturnType<typeof vi.spyOn>;
 	const INVALID_SPEC_PATH = "tests/temp-invalid.yaml";
 	const V2_SPEC_PATH = "tests/temp-v2.yaml";
 
 	beforeEach(() => {
-		logSpy = vi.spyOn(console, "log").mockImplementation(() => { });
-		errorSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+		logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		_errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
 			return undefined as never;
 		});
@@ -106,7 +105,7 @@ paths:
 	it("should save summary to file", async () => {
 		const writeSpy = vi
 			.spyOn(fs, "writeFileSync")
-			.mockImplementation((path, data, options) => {
+			.mockImplementation((path, _data, _options) => {
 				// Avoid actually writing the summary during test if we can
 				if (typeof path === "string" && path.includes("summary.md"))
 					return undefined;
@@ -129,7 +128,7 @@ paths:
 	});
 
 	it("should generate tests for a spec", async () => {
-		const writeSpy = vi
+		const _writeSpy = vi
 			.spyOn(fs, "writeFileSync")
 			.mockImplementation(() => undefined);
 		vi.spyOn(fs, "existsSync").mockReturnValue(true);

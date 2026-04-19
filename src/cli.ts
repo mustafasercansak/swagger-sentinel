@@ -8,7 +8,7 @@ import { Command } from "commander";
 import { compareSpecs, type DiffChange } from "./comparator/index.js";
 import { generate } from "./generators/index.js";
 import { getRuleExtendedInfo, getRulesByCategory } from "./rules/registry.js";
-import type { SentinelConfig, ValidationResult } from "./types.js";
+import type { ValidationResult } from "./types.js";
 import { loadConfig } from "./utils/config.js";
 import { formatResults } from "./utils/formatter.js";
 import {
