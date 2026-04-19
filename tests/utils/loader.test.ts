@@ -6,6 +6,7 @@ import {
 	loadSpec,
 	resolveRef,
 } from "../../src/utils/loader.js";
+import { OpenAPISpec } from "../../src/types.js";
 
 vi.mock("fs");
 vi.mock("@apidevtools/json-schema-ref-parser");
@@ -24,7 +25,7 @@ describe("loader.ts", () => {
 				dereference: vi.fn().mockResolvedValue(mockSpec),
 			};
 			vi.mocked(SwaggerParser).mockImplementation(
-				() => mockParser as unknown as SwaggerParser,
+				function () { return mockParser as unknown as SwaggerParser; },
 			);
 
 			const spec = await loadSpec("test.json");
@@ -47,7 +48,7 @@ describe("loader.ts", () => {
 				dereference: vi.fn().mockResolvedValue(mockSpec),
 			};
 			vi.mocked(SwaggerParser).mockImplementation(
-				() => mockParser as unknown as SwaggerParser,
+				function () { return mockParser as unknown as SwaggerParser; },
 			);
 
 			await expect(loadSpec("test.json")).rejects.toThrow(
