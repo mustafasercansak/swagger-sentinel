@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { loadCustomRules, runCustomRules } from "../../src/rules/manager.js";
+import type { OpenAPISpec } from "../../src/types.js";
 
 vi.mock("fs");
 
@@ -15,11 +16,11 @@ describe("manager.ts", () => {
 
 		it("should load JS/MJS files from directory", async () => {
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-			vi.mocked(fs.readdirSync).mockReturnValue([
+			vi.mocked(fs.readdirSync as (path: string) => string[]).mockReturnValue([
 				"rule1.js",
 				"rule2.mjs",
 				"README.md",
-			] as string[]);
+			]);
 
 			// We can't easily mock dynamic imports in a portable way with vitest without more setup,
 			// but we can test that it filters files correctly.
@@ -57,6 +58,15 @@ describe("manager.ts", () => {
 			expect(results).toHaveLength(1);
 			expect(results[0].id).toBe("CUSTOM_ERR");
 			expect(results[0].message).toContain("Boom");
+		});
+
+		it("should stringify non-Error thrown values", async () => {
+			const mockValidator = vi.fn().mockRejectedValue("string error");
+			const spec = { openapi: "3.0.0" } as unknown as OpenAPISpec;
+
+			const results = await runCustomRules(spec, [mockValidator]);
+			expect(results[0].id).toBe("CUSTOM_ERR");
+			expect(results[0].message).toContain("string error");
 		});
 	});
 });
