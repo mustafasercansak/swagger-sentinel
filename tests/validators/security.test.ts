@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateSecurity } from "../../src/validators/security.js";
 
 function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-function spec(overrides: any = {}) {
+function spec(overrides: Record<string, unknown> = {}): OpenAPISpec {
 	return Object.assign(
 		{
 			openapi: "3.0.3",
@@ -14,7 +14,7 @@ function spec(overrides: any = {}) {
 			paths: {},
 		},
 		overrides,
-	);
+	) as OpenAPISpec;
 }
 
 describe("validateSecurity", () => {
@@ -25,7 +25,7 @@ describe("validateSecurity", () => {
 				securitySchemes: { bearer: { type: "http", scheme: "bearer" } },
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC90")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC90")?.passed).toBe(true);
 	});
 
 	it("SEC90 fails when no securitySchemes", () => {
@@ -43,7 +43,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC91")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC91")?.passed).toBe(true);
 	});
 
 	it("SEC91 fails when apiKey is in query", () => {
@@ -54,7 +54,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		const r = check(validateSecurity(s as any), "SEC91");
+		const r = check(validateSecurity(s), "SEC91");
 		expect(r?.passed).toBe(false);
 		expect(r?.severity).toBe("error");
 	});
@@ -70,7 +70,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC93")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC93")?.passed).toBe(true);
 	});
 
 	it("SEC93 fails when password field is not writeOnly", () => {
@@ -79,23 +79,23 @@ describe("validateSecurity", () => {
 				schemas: { User: { properties: { password: { type: "string" } } } },
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC93")?.passed).toBe(false);
+		expect(check(validateSecurity(s), "SEC93")?.passed).toBe(false);
 	});
 
 	// SEC95
 	it("SEC95 passes for https server", () => {
 		const s = spec({ servers: [{ url: "https://api.example.com" }] });
-		expect(check(validateSecurity(s as any), "SEC95")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC95")?.passed).toBe(true);
 	});
 
 	it("SEC95 passes for localhost http", () => {
 		const s = spec({ servers: [{ url: "http://localhost:3000" }] });
-		expect(check(validateSecurity(s as any), "SEC95")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC95")?.passed).toBe(true);
 	});
 
 	it("SEC95 fails for plain http production server", () => {
 		const s = spec({ servers: [{ url: "http://api.example.com" }] });
-		const r = check(validateSecurity(s as any), "SEC95");
+		const r = check(validateSecurity(s), "SEC95");
 		expect(r?.passed).toBe(false);
 		expect(r?.severity).toBe("error");
 	});
@@ -117,7 +117,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC96")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC96")?.passed).toBe(true);
 	});
 
 	it("SEC96 fails when OAuth2 flow has no scopes", () => {
@@ -131,7 +131,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC96")?.passed).toBe(false);
+		expect(check(validateSecurity(s), "SEC96")?.passed).toBe(false);
 	});
 
 	// SEC97
@@ -152,7 +152,7 @@ describe("validateSecurity", () => {
 				securitySchemes: { bearer: { type: "http", scheme: "bearer" } },
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC97")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC97")?.passed).toBe(true);
 	});
 
 	it("SEC97 fails when secured op missing 401", () => {
@@ -165,18 +165,18 @@ describe("validateSecurity", () => {
 				securitySchemes: { bearer: { type: "http", scheme: "bearer" } },
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC97")?.passed).toBe(false);
+		expect(check(validateSecurity(s), "SEC97")?.passed).toBe(false);
 	});
 
 	// SEC99
 	it("SEC99 passes for normal server URL", () => {
 		const s = spec({ servers: [{ url: "https://api.example.com" }] });
-		expect(check(validateSecurity(s as any), "SEC99")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC99")?.passed).toBe(true);
 	});
 
 	it("SEC99 fails when credentials in server URL", () => {
 		const s = spec({ servers: [{ url: "https://user:pass@api.example.com" }] });
-		const r = check(validateSecurity(s as any), "SEC99");
+		const r = check(validateSecurity(s), "SEC99");
 		expect(r?.passed).toBe(false);
 		expect(r?.severity).toBe("error");
 	});
@@ -188,7 +188,7 @@ describe("validateSecurity", () => {
 				securitySchemes: { bearer: { type: "http", scheme: "bearer" } },
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC100")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC100")?.passed).toBe(true);
 	});
 
 	it("SEC100 fails when basic auth scheme is used", () => {
@@ -197,7 +197,7 @@ describe("validateSecurity", () => {
 				securitySchemes: { basic: { type: "http", scheme: "basic" } },
 			},
 		});
-		const r = check(validateSecurity(s as any), "SEC100");
+		const r = check(validateSecurity(s), "SEC100");
 		expect(r?.passed).toBe(false);
 		expect(r?.severity).toBe("warning");
 	});
@@ -211,7 +211,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC101")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC101")?.passed).toBe(true);
 	});
 
 	it("SEC101 fails when header name starts with X-", () => {
@@ -222,7 +222,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC101")?.passed).toBe(false);
+		expect(check(validateSecurity(s), "SEC101")?.passed).toBe(false);
 	});
 
 	// SEC102 HTML responses should include a Content-Security-Policy header
@@ -243,7 +243,7 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC102")?.passed).toBe(true);
+		expect(check(validateSecurity(s), "SEC102")?.passed).toBe(true);
 	});
 
 	it("SEC102 fails when HTML response missing CSP header", () => {
@@ -258,6 +258,6 @@ describe("validateSecurity", () => {
 				},
 			},
 		});
-		expect(check(validateSecurity(s as any), "SEC102")?.passed).toBe(false);
+		expect(check(validateSecurity(s), "SEC102")?.passed).toBe(false);
 	});
 });

@@ -117,7 +117,10 @@ export interface OpenAPISpec {
 		responses?: Record<string, OpenAPIResponse | Record<string, unknown>>;
 		parameters?: Record<string, OpenAPIParameter | Record<string, unknown>>;
 		examples?: Record<string, unknown>;
-		requestBodies?: Record<string, OpenAPIRequestBody | Record<string, unknown>>;
+		requestBodies?: Record<
+			string,
+			OpenAPIRequestBody | Record<string, unknown>
+		>;
 		headers?: Record<string, unknown>;
 		securitySchemes?: Record<string, OpenAPISecurityScheme>;
 		links?: Record<string, unknown>;

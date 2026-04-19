@@ -1,4 +1,4 @@
-import type { OpenAPIOperation, OpenAPISchema, OpenAPISpec } from "../types.js";
+import type { OpenAPISchema, OpenAPISpec } from "../types.js";
 import { getAllOperations, resolveRef } from "../utils/loader.js";
 import { generateFakeObject, getFakerCall } from "./data-faker.js";
 
@@ -172,7 +172,7 @@ function schemaToJsonSchema(
 }
 
 function generateTestFile(
-	tag: string,
+	_tag: string,
 	ops: ReturnType<typeof getAllOperations>,
 	spec: OpenAPISpec,
 ) {
@@ -200,7 +200,7 @@ import * as schemas from './schemas';
 		// Generate test for each response code
 		for (const [statusCode, response] of Object.entries(responses)) {
 			const status = parseInt(statusCode, 10);
-			if (isNaN(status)) continue; // skip 'default'
+			if (Number.isNaN(status)) continue; // skip 'default'
 
 			const testName = getTestName(method, path, status, response);
 
@@ -287,7 +287,7 @@ import * as schemas from './schemas';
 
 function getTestName(
 	method: string,
-	path: string,
+	_path: string,
 	status: number,
 	response: { description: string },
 ) {

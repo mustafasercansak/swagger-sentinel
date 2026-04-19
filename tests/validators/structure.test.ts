@@ -6,7 +6,7 @@ function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-const BASE: Record<string, any> = {
+const BASE: Record<string, unknown> = {
 	openapi: "3.0.3",
 	info: {
 		title: "Test API",
@@ -17,7 +17,7 @@ const BASE: Record<string, any> = {
 	paths: { "/items": { get: { responses: { "200": { description: "ok" } } } } },
 };
 
-function spec(overrides?: Record<string, any>): OpenAPISpec {
+function spec(overrides?: Record<string, unknown>): OpenAPISpec {
 	return Object.assign({}, BASE, overrides) as OpenAPISpec;
 }
 
