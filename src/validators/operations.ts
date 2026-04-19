@@ -1,9 +1,9 @@
-import type { OpenAPISpec, ValidationResult } from "../types.js";
-import {
-	getAllOperations,
-	type OperationEntry,
-	resolveRef,
-} from "../utils/loader.js";
+import type {
+	OpenAPIResponse,
+	OpenAPISpec,
+	ValidationResult,
+} from "../types.js";
+import { getAllOperations, resolveRef } from "../utils/loader.js";
 
 /**
  * Category: Operations (22 checks, 13 automated)
@@ -110,9 +110,7 @@ export function validateOperations(spec: OpenAPISpec): ValidationResult[] {
 			const schema = mediaType.schema || {};
 			if (
 				schema.type === "array" ||
-				(schema.properties &&
-					schema.properties.items &&
-					schema.properties.items.type === "array")
+				schema.properties?.items?.type === "array"
 			) {
 				const params = (op.operation.parameters || []).concat(
 					op.pathItem.parameters || [],
@@ -292,7 +290,7 @@ export function validateOperations(spec: OpenAPISpec): ValidationResult[] {
 			let headers = resp429.headers || {};
 			if (resp429.$ref) {
 				const refResp = resolveRef(spec, resp429.$ref);
-				if (refResp) headers = refResp.headers || {};
+				if (refResp) headers = (refResp as OpenAPIResponse).headers || {};
 			}
 			const hasRateLimit = Object.keys(headers).some((h) =>
 				["retry-after", "x-ratelimit-limit", "ratelimit-limit"].includes(
@@ -326,7 +324,7 @@ export function validateOperations(spec: OpenAPISpec): ValidationResult[] {
 			let headers = resp202.headers || {};
 			if (resp202.$ref) {
 				const refResp = resolveRef(spec, resp202.$ref);
-				if (refResp) headers = refResp.headers || {};
+				if (refResp) headers = (refResp as OpenAPIResponse).headers || {};
 			}
 			const hasLocation = Object.keys(headers).some((h) =>
 				["location", "link"].includes(h.toLowerCase()),

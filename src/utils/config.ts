@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs from "node:fs";
+import path from "node:path";
 import yaml from "js-yaml";
-import path from "path";
 import type { SentinelConfig } from "../types.js";
 
 const CONFIG_FILES = [
@@ -29,7 +29,7 @@ export function loadConfig(cwd: string = process.cwd()): SentinelConfig {
 					config = JSON.parse(content);
 				}
 				break; // Stop at first found config
-			} catch (err) {
+			} catch (_err) {
 				console.warn(`Warning: Failed to parse config file ${file}`);
 			}
 		}
@@ -44,7 +44,7 @@ export function loadConfig(cwd: string = process.cwd()): SentinelConfig {
 				if (pkg["swagger-sentinel"]) {
 					config = pkg["swagger-sentinel"];
 				}
-			} catch (err) {
+			} catch (_err) {
 				// ignore
 			}
 		}

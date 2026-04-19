@@ -150,7 +150,9 @@ function schemaToJsonSchema(
 ): OpenAPISchema {
 	if (schema.$ref) {
 		const resolved = resolveRef(spec, schema.$ref);
-		return resolved ? schemaToJsonSchema(resolved, spec) : {};
+		return resolved
+			? schemaToJsonSchema(resolved as OpenAPISchema, spec)
+			: ({} as OpenAPISchema);
 	}
 
 	const result = { ...schema };
@@ -244,7 +246,8 @@ import * as schemas from './schemas';
 			if (hasRequestBody && status < 400) {
 				let bodySchema =
 					operation.requestBody?.content?.["application/json"]?.schema;
-				if (bodySchema?.$ref) bodySchema = resolveRef(spec, bodySchema.$ref);
+				if (bodySchema?.$ref)
+					bodySchema = resolveRef(spec, bodySchema.$ref) as OpenAPISchema;
 
 				const bodyContent = bodySchema
 					? generateFakeObject(bodySchema, spec)

@@ -1,6 +1,6 @@
 {
 	"name": "swagger-sentinel",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist",
 	"type": "module",
 	"main": "dist/index.js",
@@ -8,6 +8,15 @@
 	"bin": {
 		"swagger-sentinel": "dist/cli.js"
 	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE",
+		"api.yaml",
+		"action.yml",
+		"Dockerfile",
+		"entrypoint.sh"
+	],
 	"scripts": {
 		"build": "tsc",
 		"build:watch": "tsc -w",

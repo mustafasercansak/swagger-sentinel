@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { findLineNumber } from "../../src/utils/source-map.js";
 

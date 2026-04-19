@@ -6,13 +6,16 @@ function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-function spec(paths: any, components: any = {}) {
+function spec(
+	paths: Record<string, unknown>,
+	components: Record<string, unknown> = {},
+): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
 		info: { title: "T", version: "1.0.0" },
 		paths,
 		components,
-	};
+	} as unknown as OpenAPISpec;
 }
 
 describe("validateResponses", () => {
@@ -46,7 +49,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R70")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R70")?.passed).toBe(true);
 	});
 
 	it("R70 fails when 3+ different error schemas used", () => {
@@ -91,21 +94,21 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R70")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R70")?.passed).toBe(false);
 	});
 
 	// R73 all operations have responses
 	it("R73 fails when operation has no responses", () => {
 		const s = spec({ "/items": { get: { responses: {} } } });
-		expect(check(validateResponses(s as any), "R73")?.passed).toBe(false);
-		expect(check(validateResponses(s as any), "R73")?.severity).toBe("error");
+		expect(check(validateResponses(s), "R73")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R73")?.severity).toBe("error");
 	});
 
 	it("R73 passes when operation has at least one response", () => {
 		const s = spec({
 			"/items": { get: { responses: { "200": { description: "ok" } } } },
 		});
-		expect(check(validateResponses(s as any), "R73")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R73")?.passed).toBe(true);
 	});
 
 	// R74 success responses have content
@@ -113,7 +116,7 @@ describe("validateResponses", () => {
 		const s = spec({
 			"/items": { get: { responses: { "200": { description: "ok" } } } },
 		});
-		expect(check(validateResponses(s as any), "R74")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R74")?.passed).toBe(false);
 	});
 
 	it("R74 passes for 204 with no content", () => {
@@ -122,7 +125,7 @@ describe("validateResponses", () => {
 				delete: { responses: { "204": { description: "deleted" } } },
 			},
 		});
-		expect(check(validateResponses(s as any), "R74")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R74")?.passed).toBe(true);
 	});
 
 	it("R74 passes when 200 has content", () => {
@@ -142,7 +145,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R74")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R74")?.passed).toBe(true);
 	});
 
 	// R75 429 has rate-limit headers
@@ -159,14 +162,14 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R75")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R75")?.passed).toBe(true);
 	});
 
 	it("R75 fails when 429 has no rate-limit headers", () => {
 		const s = spec({
 			"/items": { get: { responses: { "429": { description: "too many" } } } },
 		});
-		expect(check(validateResponses(s as any), "R75")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R75")?.passed).toBe(false);
 	});
 
 	// R77 201 includes Location header
@@ -183,17 +186,15 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R77")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R77")?.passed).toBe(true);
 	});
 
 	it("R77 fails when 201 has no Location header", () => {
 		const s = spec({
 			"/items": { post: { responses: { "201": { description: "created" } } } },
 		});
-		expect(check(validateResponses(s as any), "R77")?.passed).toBe(false);
-		expect(check(validateResponses(s as any), "R77")?.severity).toBe(
-			"suggestion",
-		);
+		expect(check(validateResponses(s), "R77")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R77")?.severity).toBe("suggestion");
 	});
 
 	// R78 list responses have total count
@@ -213,7 +214,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R78")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R78")?.passed).toBe(true);
 	});
 
 	it("R78 fails when array response has no total count", () => {
@@ -231,7 +232,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R78")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R78")?.passed).toBe(false);
 	});
 
 	// R79 single-resource GET has ETag
@@ -249,7 +250,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R79")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R79")?.passed).toBe(true);
 	});
 
 	it("R79 fails when single resource GET has no ETag", () => {
@@ -265,7 +266,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R79")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R79")?.passed).toBe(false);
 	});
 
 	// R80 406 Not Acceptable defined for multiple content types
@@ -282,7 +283,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R80")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R80")?.passed).toBe(true);
 	});
 
 	it("R80 fails when multiple content types and no 406", () => {
@@ -297,7 +298,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R80")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R80")?.passed).toBe(false);
 	});
 
 	// R81 415 Unsupported Media Type for requestBody
@@ -310,7 +311,7 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R81")?.passed).toBe(true);
+		expect(check(validateResponses(s), "R81")?.passed).toBe(true);
 	});
 
 	it("R81 fails when requestBody and no 415", () => {
@@ -322,6 +323,6 @@ describe("validateResponses", () => {
 				},
 			},
 		});
-		expect(check(validateResponses(s as any), "R81")?.passed).toBe(false);
+		expect(check(validateResponses(s), "R81")?.passed).toBe(false);
 	});
 });

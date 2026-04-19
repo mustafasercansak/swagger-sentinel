@@ -1,18 +1,14 @@
 #!/usr/bin/env node
 
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import { compareSpecs, type DiffChange } from "./comparator/index.js";
 import { generate } from "./generators/index.js";
-import {
-	getRuleExtendedInfo,
-	getRulesByCategory,
-	RULE_REGISTRY,
-} from "./rules/registry.js";
-import { SentinelConfig, type ValidationResult } from "./types.js";
+import { getRuleExtendedInfo, getRulesByCategory } from "./rules/registry.js";
+import type { ValidationResult, SentinelConfig } from "./types.js";
 import { loadConfig } from "./utils/config.js";
 import { formatResults } from "./utils/formatter.js";
 import {
@@ -29,12 +25,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgPath = path.resolve(__dirname, "../package.json");
 const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 
-const program = new Command();
+export async function run(args: string[] = process.argv) {
+	const program = new Command();
 
-program
-	.name("swagger-sentinel")
-	.description("Opinionated OpenAPI 3.x validator and test generator")
-	.version(pkg.version);
+	program
+		.name("swagger-sentinel")
+		.description("Opinionated OpenAPI 3.x validator and test generator")
+		.version(pkg.version);
 
 program
 	.command("validate <specFile>")
@@ -52,7 +49,7 @@ program
 		"--summary <path>",
 		"Save a Markdown summary of the results to a file",
 	)
-	.action(async (specFile: string, options: any) => {
+	.action(async (specFile: string, options: Record<string, unknown>) => {
 		try {
 			const config = loadConfig();
 			const mergedOptions = {
@@ -60,10 +57,10 @@ program
 				strict: options.strict || config.strict || false,
 			};
 
-			let customRules: any[] = [];
+			let customRules: unknown[] = [];
 			if (options.rules) {
 				const { loadCustomRules } = await import("./rules/manager.js");
-				customRules = await loadCustomRules(options.rules);
+				customRules = await loadCustomRules(options.rules as string);
 			}
 
 			const spec = await loadSpec(specFile);
@@ -101,12 +98,12 @@ program
 				}
 			});
 
-			const output = formatResults(results, options.format);
+			const output = formatResults(results, options.format as string);
 
 			if (options.format === "json") {
 				console.log(JSON.stringify(output, null, 2));
 			} else {
-				printResults(results, mergedOptions.strict);
+				printResults(results, mergedOptions.strict as boolean);
 			}
 
 			// Handle GitHub Actions Annotations
@@ -125,7 +122,7 @@ program
 			// Handle Job Summary
 			if (options.summary) {
 				const summaryMd = generateGitHubSummary(results, specFile);
-				fs.writeFileSync(options.summary, summaryMd, "utf-8");
+				fs.writeFileSync(options.summary as string, summaryMd, "utf-8");
 				console.log(chalk.cyan(`\n📊 Summary saved to ${options.summary}`));
 			}
 
@@ -137,8 +134,9 @@ program
 			);
 
 			process.exit(hasErrors || (mergedOptions.strict && hasWarnings) ? 1 : 0);
-		} catch (err: any) {
-			console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
+		} catch (err: unknown) {
+			const error = err as Error;
+			console.error(chalk.red(`\n✗ Error: ${error.message}\n`));
 			process.exit(1);
 		}
 	});
@@ -149,7 +147,7 @@ program
 program
 	.command("generate <specFile>")
 	.description("Generate Vitest TypeScript tests from an OpenAPI spec")
-	.option("--output <dir>", "Output directory for generated tests", "./tests")
+	.option("-o, --output <dir>", "Output directory for generated tests", "./tests")
 	.option("--tag <tag>", "Generate tests for a specific tag only")
 	.option(
 		"--base-url <url>",
@@ -157,7 +155,7 @@ program
 		"http://localhost:3000",
 	)
 	.option("--seed <number>", "Seed for Faker.js consistency", "42")
-	.action(async (specFile: string, options: any) => {
+	.action(async (specFile: string, options: Record<string, unknown>) => {
 		try {
 			const config = loadConfig();
 			const genConfig = config.generate || {};
@@ -176,25 +174,31 @@ program
 			};
 
 			const spec = await loadSpec(specFile);
-			const files = generate(spec, mergedOptions);
+			const genOptions = {
+				baseUrl: mergedOptions.baseUrl as string,
+				tag: options.tag as string | undefined,
+				output: mergedOptions.output as string,
+			};
+			const files = generate(spec, genOptions);
 
-			if (!fs.existsSync(options.output)) {
-				fs.mkdirSync(options.output, { recursive: true });
+			if (!fs.existsSync(mergedOptions.output as string)) {
+				fs.mkdirSync(mergedOptions.output as string, { recursive: true });
 			}
 
 			for (const file of files) {
-				const filePath = path.join(options.output, file.name);
+				const filePath = path.join(mergedOptions.output as string, file.name);
 				fs.writeFileSync(filePath, file.content, "utf-8");
 				console.log(chalk.green(`  ✓ ${filePath}`));
 			}
 
 			console.log(
 				chalk.green(
-					`\n✓ Generated ${files.length} test file(s) in ${options.output}\n`,
+					`\n✓ Generated ${files.length} test file(s) in ${mergedOptions.output}\n`,
 				),
 			);
-		} catch (err: any) {
-			console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
+		} catch (err: unknown) {
+			const error = err as Error;
+			console.error(chalk.red(`\n✗ Error: ${error.message}\n`));
 			process.exit(1);
 		}
 	});
@@ -206,7 +210,7 @@ program
 	.command("watch <specFile>")
 	.description("Watch spec file and re-validate on changes")
 	.option("--strict", "Treat warnings as errors")
-	.action(async (specFile: string, options: any) => {
+	.action(async (specFile: string, options: Record<string, unknown>) => {
 		const chokidar = await import("chokidar");
 		const config = loadConfig();
 		const mergedOptions = {
@@ -221,9 +225,10 @@ program
 				const spec = await loadSpec(specFile);
 				const results = await validate(spec, { ...mergedOptions, config });
 				console.log(chalk.gray(`\n--- ${new Date().toLocaleTimeString()} ---`));
-				printResults(results, mergedOptions.strict);
-			} catch (err: any) {
-				console.error(chalk.red(`\n✗ ${err.message}`));
+				printResults(results, mergedOptions.strict as boolean);
+			} catch (err: unknown) {
+				const error = err as Error;
+				console.error(chalk.red(`\n✗ ${error.message}`));
 			}
 		};
 
@@ -265,14 +270,15 @@ program
 					"head",
 					"options",
 				]) {
-					if ((p as any)[method]) opCount++;
+					if ((p as Record<string, unknown>)[method]) opCount++;
 				}
 			}
 
 			console.log(chalk.green(`\n✓ Valid OpenAPI ${spec.openapi} spec`));
 			console.log(chalk.gray(`  ${pathCount} paths, ${opCount} operations\n`));
-		} catch (err: any) {
-			console.error(chalk.red(`\n✗ Invalid spec: ${err.message}\n`));
+		} catch (err: unknown) {
+			const error = err as Error;
+			console.error(chalk.red(`\n✗ Invalid spec: ${error.message}\n`));
 			process.exit(1);
 		}
 	});
@@ -299,11 +305,13 @@ program
 					"head",
 					"options",
 				]) {
-					const op = (pathItem as any)[method];
-					if (op && op.tags) {
+					const op = (pathItem as Record<string, unknown>)[method] as {
+						tags?: string[];
+					};
+					if (op?.tags) {
 						for (const tag of op.tags) {
 							if (!tags.has(tag)) tags.set(tag, []);
-							tags.get(tag)!.push(`${method.toUpperCase()} ${pathStr}`);
+							tags.get(tag)?.push(`${method.toUpperCase()} ${pathStr}`);
 						}
 					}
 				}
@@ -317,11 +325,14 @@ program
 			console.log(chalk.cyan(`\nTags in spec:\n`));
 			for (const [tag, ops] of tags.entries()) {
 				console.log(chalk.white(`  ${tag} (${ops.length} operations)`));
-				for (const op of ops) console.log(chalk.gray(`    ${op}`));
+				for (const op of ops) {
+					console.log(chalk.gray(`    ${op}`));
+				}
 			}
 			console.log("");
-		} catch (err: any) {
-			console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
+		} catch (err: unknown) {
+			const error = err as Error;
+			console.error(chalk.red(`\n✗ Error: ${error.message}\n`));
 			process.exit(1);
 		}
 	});
@@ -333,25 +344,32 @@ program
 	.command("diff <oldSpec> <newSpec>")
 	.description("Compare two spec versions and report breaking changes")
 	.option("--format <format>", "Output format: text, json", "text")
-	.action(async (oldSpecFile: string, newSpecFile: string, options: any) => {
-		try {
-			const oldSpec = await loadSpec(oldSpecFile);
-			const newSpec = await loadSpec(newSpecFile);
-			const changes = compareSpecs(oldSpec, newSpec);
+	.action(
+		async (
+			oldSpecFile: string,
+			newSpecFile: string,
+			options: Record<string, unknown>,
+		) => {
+			try {
+				const oldSpec = await loadSpec(oldSpecFile);
+				const newSpec = await loadSpec(newSpecFile);
+				const changes = compareSpecs(oldSpec, newSpec);
 
-			if (options.format === "json") {
-				console.log(JSON.stringify(changes, null, 2));
-			} else {
-				printDiffResults(changes);
+				if (options.format === "json") {
+					console.log(JSON.stringify(changes, null, 2));
+				} else {
+					printDiffResults(changes);
+				}
+
+				const hasBreaking = changes.some((c) => c.type === "breaking");
+				process.exit(hasBreaking ? 1 : 0);
+			} catch (err: unknown) {
+				const error = err as Error;
+				console.error(chalk.red(`\n✗ Error: ${error.message}\n`));
+				process.exit(1);
 			}
-
-			const hasBreaking = changes.some((c) => c.type === "breaking");
-			process.exit(hasBreaking ? 1 : 0);
-		} catch (err: any) {
-			console.error(chalk.red(`\n✗ Error: ${err.message}\n`));
-			process.exit(1);
-		}
-	});
+		},
+	);
 
 // =====================================================
 // PRINT HELPERS
@@ -460,7 +478,7 @@ program
 	.command("rules [id]")
 	.description("List and explore the 130-point validation checklist")
 	.option("--category <name>", "Filter rules by category")
-	.action((id: string | undefined, options: any) => {
+	.action((id: string | undefined, options: Record<string, unknown>) => {
 		if (id) {
 			const info = getRuleExtendedInfo(id);
 			if (info) {
@@ -486,7 +504,11 @@ program
 		console.log(chalk.cyan(`\nOpenAPI 130-Point Checklist:\n`));
 
 		for (const cat of categories) {
-			if (filterCat && cat.toLowerCase() !== filterCat.toLowerCase()) continue;
+			if (
+				filterCat &&
+				cat.toLowerCase() !== (filterCat as string).toLowerCase()
+			)
+				continue;
 
 			const rules = getRulesByCategory(cat);
 			console.log(chalk.white.bold(`  ${cat} (${rules.length} checks)`));
@@ -500,7 +522,7 @@ program
 							? chalk.yellow
 							: chalk.blue;
 				console.log(
-					`    ${symbol} ${chalk.gray(rule.id.padEnd(6))} ${rule.title.padEnd(45)} ${sevColor(`(${rule.severity})`)}`,
+					`    ${symbol} ${chalk.gray(rule.id.padEnd(6))} ${rule.title.padEnd(45)} ${sevColor(`(${(rule.severity as string)})`)}`,
 				);
 			}
 			console.log("");
@@ -526,4 +548,19 @@ program
 		console.log(generateSpectralRuleset());
 	});
 
-program.parse();
+	return program.parseAsync(args);
+}
+
+// Execute if run via CLI
+const isMain = process.argv[1] && (
+	process.argv[1].endsWith("cli.js") || 
+	process.argv[1].endsWith("cli.ts") || 
+	process.argv[1].includes(".bin")
+);
+
+if (isMain) {
+	run().catch((err) => {
+		console.error(chalk.red("Fatal error:"), err);
+		process.exit(1);
+	});
+}

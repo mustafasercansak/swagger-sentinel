@@ -6,7 +6,7 @@ import type {
 	OpenAPISpec,
 	ValidationResult,
 } from "../types.js";
-import { getAllOperations, type OperationEntry } from "../utils/loader.js";
+import { getAllOperations } from "../utils/loader.js";
 
 /**
  * Category: Documentation (10 checks, 6 automated)
@@ -91,13 +91,14 @@ export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
 			tagsUsed.add(tag);
 		}
 	}
-	const tagDefs = (spec.tags || []).reduce((acc: Record<string, any>, t) => {
-		acc[t.name] = t;
-		return acc;
-	}, {});
-	const tagsNoDesc = [...tagsUsed].filter(
-		(t) => !tagDefs[t] || !tagDefs[t].description,
+	const tagDefs = (spec.tags || []).reduce(
+		(acc: Record<string, { description?: string }>, t) => {
+			acc[t.name] = t;
+			return acc;
+		},
+		{},
 	);
+	const tagsNoDesc = [...tagsUsed].filter((t) => !tagDefs[t]?.description);
 	results.push({
 		id: "DOC116",
 		category: "Documentation",
@@ -140,11 +141,15 @@ export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
 					| undefined;
 				if (componentResp) {
 					const cContent = componentResp.content || {};
-					for (const cMt of Object.values(cContent) as any[]) {
+					for (const cMt of Object.values(cContent) as {
+						example?: unknown;
+						examples?: Record<string, unknown>;
+						schema?: OpenAPISchema;
+					}[]) {
 						if (
 							cMt.example !== undefined ||
 							cMt.examples !== undefined ||
-							(cMt.schema && cMt.schema.example !== undefined)
+							cMt.schema?.example !== undefined
 						) {
 							hasExample = true;
 							break;

@@ -1,9 +1,5 @@
-import type {
-	OpenAPIParameter,
-	OpenAPISpec,
-	ValidationResult,
-} from "../types.js";
-import { getAllOperations, type OperationEntry } from "../utils/loader.js";
+import type { OpenAPISpec, ValidationResult } from "../types.js";
+import { getAllOperations } from "../utils/loader.js";
 
 /**
  * Category: Path Design (18 checks, 11 automated)

@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 
 /**
  * A lightweight utility to find line numbers in YAML/JSON source files

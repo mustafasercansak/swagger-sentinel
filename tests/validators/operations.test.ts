@@ -6,11 +6,14 @@ function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-function spec(paths: any, extra: any = {}) {
+function spec(
+	paths: Record<string, unknown>,
+	extra: Record<string, unknown> = {},
+): OpenAPISpec {
 	return Object.assign(
 		{ openapi: "3.0.3", info: { title: "T", version: "1.0.0" }, paths },
 		extra,
-	);
+	) as unknown as OpenAPISpec;
 }
 
 describe("validateOperations", () => {

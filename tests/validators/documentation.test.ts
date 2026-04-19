@@ -6,11 +6,14 @@ function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-function spec(paths: any, extra: any = {}) {
+function spec(
+	paths: Record<string, unknown>,
+	extra: Record<string, unknown> = {},
+): OpenAPISpec {
 	return Object.assign(
 		{ openapi: "3.0.3", info: { title: "T", version: "1.0.0" }, paths },
 		extra,
-	);
+	) as unknown as OpenAPISpec;
 }
 
 describe("validateDocumentation", () => {
@@ -31,7 +34,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		});
-		expect(check(validateDocumentation(s as any), "DOC110")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC110")?.passed).toBe(true);
 	});
 
 	it("DOC110 fails when param has no description", () => {
@@ -43,9 +46,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		});
-		expect(check(validateDocumentation(s as any), "DOC110")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC110")?.passed).toBe(false);
 	});
 
 	// DOC112 schemas have examples
@@ -65,7 +66,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		);
-		expect(check(validateDocumentation(s as any), "DOC112")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC112")?.passed).toBe(true);
 	});
 
 	it("DOC112 fails when fewer than 50% of props have examples", () => {
@@ -86,9 +87,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		);
-		expect(check(validateDocumentation(s as any), "DOC112")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC112")?.passed).toBe(false);
 	});
 
 	// DOC115 deprecated ops have x-sunset-date
@@ -102,16 +101,14 @@ describe("validateDocumentation", () => {
 				},
 			},
 		});
-		expect(check(validateDocumentation(s as any), "DOC115")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC115")?.passed).toBe(true);
 	});
 
 	it("DOC115 fails when deprecated op has no x-sunset-date", () => {
 		const s = spec({
 			"/items": { get: { deprecated: true, responses: {} } },
 		});
-		expect(check(validateDocumentation(s as any), "DOC115")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC115")?.passed).toBe(false);
 	});
 
 	// DOC116 tags have descriptions
@@ -120,7 +117,7 @@ describe("validateDocumentation", () => {
 			{ "/items": { get: { tags: ["Items"], responses: {} } } },
 			{ tags: [{ name: "Items", description: "Item operations" }] },
 		);
-		expect(check(validateDocumentation(s as any), "DOC116")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC116")?.passed).toBe(true);
 	});
 
 	it("DOC116 fails when used tag has no description", () => {
@@ -128,9 +125,7 @@ describe("validateDocumentation", () => {
 			{ "/items": { get: { tags: ["Items"], responses: {} } } },
 			{ tags: [{ name: "Items" }] },
 		);
-		expect(check(validateDocumentation(s as any), "DOC116")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC116")?.passed).toBe(false);
 	});
 
 	// DOC117 response examples
@@ -152,7 +147,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		});
-		expect(check(validateDocumentation(s as any), "DOC117")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC117")?.passed).toBe(true);
 	});
 
 	it("DOC117 fails when no response examples defined", () => {
@@ -170,9 +165,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		});
-		expect(check(validateDocumentation(s as any), "DOC117")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC117")?.passed).toBe(false);
 	});
 
 	// DOC118 request body examples
@@ -192,7 +185,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		});
-		expect(check(validateDocumentation(s as any), "DOC118")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC118")?.passed).toBe(true);
 	});
 
 	it("DOC118 fails when request body has no example", () => {
@@ -206,9 +199,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		});
-		expect(check(validateDocumentation(s as any), "DOC118")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC118")?.passed).toBe(false);
 	});
 
 	// DOC119 API info block has detailed description
@@ -223,7 +214,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		);
-		expect(check(validateDocumentation(s as any), "DOC119")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC119")?.passed).toBe(true);
 	});
 
 	it("DOC119 fails when description is too short", () => {
@@ -231,9 +222,7 @@ describe("validateDocumentation", () => {
 			{},
 			{ info: { title: "T", version: "1", description: "Too short" } },
 		);
-		expect(check(validateDocumentation(s as any), "DOC119")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC119")?.passed).toBe(false);
 	});
 
 	// DOC120 Schema properties have descriptions
@@ -253,7 +242,7 @@ describe("validateDocumentation", () => {
 				},
 			},
 		);
-		expect(check(validateDocumentation(s as any), "DOC120")?.passed).toBe(true);
+		expect(check(validateDocumentation(s), "DOC120")?.passed).toBe(true);
 	});
 
 	it("DOC120 fails when nested property missing description", () => {
@@ -277,8 +266,6 @@ describe("validateDocumentation", () => {
 				},
 			},
 		);
-		expect(check(validateDocumentation(s as any), "DOC120")?.passed).toBe(
-			false,
-		);
+		expect(check(validateDocumentation(s), "DOC120")?.passed).toBe(false);
 	});
 });

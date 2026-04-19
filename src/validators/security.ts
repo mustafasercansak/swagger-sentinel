@@ -117,8 +117,7 @@ export function validateSecurity(spec: OpenAPISpec): ValidationResult[] {
 	// SEC95: Production server URLs use HTTPS
 	const httpServers = (spec.servers || []).filter(
 		(s) =>
-			s.url &&
-			s.url.startsWith("http://") &&
+			s.url?.startsWith("http://") &&
 			!s.url.includes("localhost") &&
 			!s.url.includes("127.0.0.1"),
 	);
@@ -143,7 +142,7 @@ export function validateSecurity(spec: OpenAPISpec): ValidationResult[] {
 			const s = scheme as OpenAPISecurityScheme;
 			if (s.type === "oauth2" && s.flows) {
 				for (const [flowName, flow] of Object.entries(s.flows)) {
-					const f = flow as any;
+					const f = flow as { scopes?: Record<string, string> };
 					if (!f.scopes || Object.keys(f.scopes).length === 0) {
 						oauthNoScopes.push(`${name}.${flowName}`);
 					}
@@ -267,8 +266,7 @@ export function validateSecurity(spec: OpenAPISpec): ValidationResult[] {
 			if (
 				s.type === "apiKey" &&
 				s.in === "header" &&
-				s.name &&
-				s.name.toUpperCase().startsWith("X-")
+				s.name?.toUpperCase().startsWith("X-")
 			) {
 				xPrefixHeaders.push(`${name} ("${s.name}")`);
 			}
@@ -291,9 +289,12 @@ export function validateSecurity(spec: OpenAPISpec): ValidationResult[] {
 	for (const op of ops) {
 		const responses = op.operation.responses || {};
 		for (const [code, resp] of Object.entries(responses)) {
-			const content = (resp as any).content || {};
+			const content =
+				(resp as { content?: Record<string, { schema?: unknown }> }).content ||
+				{};
 			if (content["text/html"]) {
-				const headers = (resp as any).headers || {};
+				const headers =
+					(resp as { headers?: Record<string, unknown> }).headers || {};
 				const hasCsp = Object.keys(headers).some(
 					(h) => h.toLowerCase() === "content-security-policy",
 				);

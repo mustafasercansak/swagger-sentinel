@@ -1,6 +1,5 @@
-import fs from "fs";
-import path from "path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs";
+import { describe, expect, it, vi } from "vitest";
 import { loadCustomRules, runCustomRules } from "../../src/rules/manager.js";
 
 vi.mock("fs");
@@ -20,7 +19,7 @@ describe("manager.ts", () => {
 				"rule1.js",
 				"rule2.mjs",
 				"README.md",
-			] as any);
+			] as string[]);
 
 			// We can't easily mock dynamic imports in a portable way with vitest without more setup,
 			// but we can test that it filters files correctly.
@@ -42,7 +41,7 @@ describe("manager.ts", () => {
 					message: "Custom fail",
 				},
 			]);
-			const spec = { openapi: "3.0.0" } as any;
+			const spec = { openapi: "3.0.0" } as unknown as OpenAPISpec;
 
 			const results = await runCustomRules(spec, [mockValidator]);
 			expect(results).toHaveLength(1);
@@ -52,7 +51,7 @@ describe("manager.ts", () => {
 
 		it("should catch errors from validators", async () => {
 			const mockValidator = vi.fn().mockRejectedValue(new Error("Boom"));
-			const spec = { openapi: "3.0.0" } as any;
+			const spec = { openapi: "3.0.0" } as unknown as OpenAPISpec;
 
 			const results = await runCustomRules(spec, [mockValidator]);
 			expect(results).toHaveLength(1);

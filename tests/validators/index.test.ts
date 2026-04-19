@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { validate } from "../../src/validators/index.js";
 
 describe("validators/index.ts", () => {
@@ -10,7 +10,7 @@ describe("validators/index.ts", () => {
 				get: { responses: { "200": { description: "OK" } } },
 			},
 		},
-	} as any;
+	} as unknown as OpenAPISpec;
 
 	it("should run all validators", async () => {
 		const results = await validate(spec);
