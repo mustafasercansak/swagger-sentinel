@@ -1,5 +1,9 @@
 import type { OpenAPISpec, ValidationResult } from "../types.js";
-import { type OperationEntry, getAllOperations, resolveRef } from "../utils/loader.js";
+import {
+	getAllOperations,
+	type OperationEntry,
+	resolveRef,
+} from "../utils/loader.js";
 
 /**
  * Category: Operations (22 checks, 13 automated)

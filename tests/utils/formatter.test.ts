@@ -1,10 +1,22 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { formatResults } from "../../src/utils/formatter.js";
 
 describe("formatter.ts", () => {
 	const results = [
-		{ id: "T1", category: "Test", severity: "error" as const, passed: false, message: "Error" },
-		{ id: "T2", category: "Test", severity: "warning" as const, passed: true, message: "OK" }
+		{
+			id: "T1",
+			category: "Test",
+			severity: "error" as const,
+			passed: false,
+			message: "Error",
+		},
+		{
+			id: "T2",
+			category: "Test",
+			severity: "warning" as const,
+			passed: true,
+			message: "OK",
+		},
 	];
 
 	it("should return raw results for text format", () => {

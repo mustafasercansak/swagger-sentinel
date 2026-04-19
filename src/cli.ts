@@ -5,6 +5,7 @@ import { Command } from "commander";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { compareSpecs, type DiffChange } from "./comparator/index.js";
 import { generate } from "./generators/index.js";
 import {
 	getRuleExtendedInfo,
@@ -22,7 +23,6 @@ import {
 import { loadSpec } from "./utils/loader.js";
 import { findLineNumber } from "./utils/source-map.js";
 import { validate } from "./validators/index.js";
-import { compareSpecs, type DiffChange } from "./comparator/index.js";
 
 // Load package.json for versioning
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -381,7 +381,9 @@ function printDiffResults(changes: DiffChange[]) {
 			chalk.yellow.bold(`  Non-Breaking Changes (${nonBreaking.length}):`),
 		);
 		for (const c of nonBreaking) {
-			console.log(chalk.yellow(`    ⚠ ${chalk.white(`${c.path}:`)} ${c.message}`));
+			console.log(
+				chalk.yellow(`    ⚠ ${chalk.white(`${c.path}:`)} ${c.message}`),
+			);
 		}
 		console.log("");
 	}
@@ -389,16 +391,16 @@ function printDiffResults(changes: DiffChange[]) {
 	if (informative.length > 0) {
 		console.log(chalk.blue.bold(`  Informative (${informative.length}):`));
 		for (const c of informative) {
-			console.log(chalk.blue(`    ℹ ${chalk.white(`${c.path}:`)} ${c.message}`));
+			console.log(
+				chalk.blue(`    ℹ ${chalk.white(`${c.path}:`)} ${c.message}`),
+			);
 		}
 		console.log("");
 	}
 
 	if (breaking.length > 0) {
 		console.log(
-			chalk.red(
-				`✗ FAILED: ${breaking.length} breaking change(s) detected!\n`,
-			),
+			chalk.red(`✗ FAILED: ${breaking.length} breaking change(s) detected!\n`),
 		);
 	} else {
 		console.log(chalk.green(`✓ SUCCESS: No breaking changes detected.\n`));

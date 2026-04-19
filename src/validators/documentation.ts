@@ -1,4 +1,11 @@
-import type { OpenAPISpec, ValidationResult, OpenAPIParameter, OpenAPISchema } from "../types.js";
+import type {
+	OpenAPIParameter,
+	OpenAPIRequestBody,
+	OpenAPIResponse,
+	OpenAPISchema,
+	OpenAPISpec,
+	ValidationResult,
+} from "../types.js";
 import { getAllOperations, type OperationEntry } from "../utils/loader.js";
 
 /**
@@ -128,7 +135,9 @@ export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
 			// Check for example in referenced component response
 			if (resp.$ref) {
 				const refName = resp.$ref.split("/").pop() || "";
-				const componentResp = spec.components?.responses?.[refName];
+				const componentResp = spec.components?.responses?.[refName] as
+					| OpenAPIResponse
+					| undefined;
 				if (componentResp) {
 					const cContent = componentResp.content || {};
 					for (const cMt of Object.values(cContent) as any[]) {
@@ -175,7 +184,9 @@ export function validateDocumentation(spec: OpenAPISpec): ValidationResult[] {
 		// Resolve $ref if present
 		if (op.operation.requestBody.$ref) {
 			const refName = op.operation.requestBody.$ref.split("/").pop() || "";
-			const componentBody = spec.components?.requestBodies?.[refName];
+			const componentBody = spec.components?.requestBodies?.[refName] as
+				| OpenAPIRequestBody
+				| undefined;
 			if (componentBody) {
 				content = componentBody.content || {};
 			}

@@ -1,8 +1,8 @@
 import type {
-	OpenAPISpec,
-	ValidationResult,
 	OpenAPISchema,
 	OpenAPISecurityScheme,
+	OpenAPISpec,
+	ValidationResult,
 } from "../types.js";
 import { getAllOperations } from "../utils/loader.js";
 
@@ -65,7 +65,9 @@ export function validateSecurity(spec: OpenAPISpec): ValidationResult[] {
 	];
 	const notWriteOnly: string[] = [];
 	if (spec.components?.schemas) {
-		for (const [schemaName, schema] of Object.entries(spec.components.schemas)) {
+		for (const [schemaName, schema] of Object.entries(
+			spec.components.schemas,
+		)) {
 			if (schema.properties) {
 				for (const [propName, propSchema] of Object.entries(
 					schema.properties,

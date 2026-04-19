@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateStructure } from "../../src/validators/structure.js";
 
 function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-const BASE: any = {
+const BASE: Record<string, any> = {
 	openapi: "3.0.3",
 	info: {
 		title: "Test API",
@@ -17,8 +17,8 @@ const BASE: any = {
 	paths: { "/items": { get: { responses: { "200": { description: "ok" } } } } },
 };
 
-function spec(overrides?: any) {
-	return Object.assign({}, BASE, overrides);
+function spec(overrides?: Record<string, any>): OpenAPISpec {
+	return Object.assign({}, BASE, overrides) as OpenAPISpec;
 }
 
 describe("validateStructure", () => {

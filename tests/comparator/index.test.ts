@@ -95,7 +95,10 @@ describe("comparator", () => {
 		const oldSpec = spec({
 			"/pets": {
 				get: {
-					responses: { "200": { description: "ok" }, "201": { description: "c" } },
+					responses: {
+						"200": { description: "ok" },
+						"201": { description: "c" },
+					},
 				},
 			},
 		});
@@ -121,7 +124,10 @@ describe("comparator", () => {
 		});
 		const changes = compareSpecs(oldSpec, newSpec);
 		expect(changes).toContainEqual(
-			expect.objectContaining({ id: "OPERATION_ID_CHANGED", type: "informative" }),
+			expect.objectContaining({
+				id: "OPERATION_ID_CHANGED",
+				type: "informative",
+			}),
 		);
 	});
 });

@@ -6,7 +6,7 @@ import type { ValidationResult } from "../types.js";
 export function formatResults(
 	results: ValidationResult[],
 	format: string,
-): any {
+): unknown {
 	if (format === "json") {
 		const passed = results.filter((r) => r.passed);
 		const failed = results.filter((r) => !r.passed);

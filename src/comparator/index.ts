@@ -1,8 +1,7 @@
 import type {
-	OpenAPISpec,
-	OpenAPIPathItem,
 	OpenAPIOperation,
-	OpenAPIParameter,
+	OpenAPIPathItem,
+	OpenAPISpec,
 } from "../types.js";
 
 export type DiffType = "breaking" | "non-breaking" | "informative";
@@ -110,7 +109,9 @@ function compareOperations(
 	const newParams = newOp.parameters || [];
 
 	for (const oldP of oldParams) {
-		const newP = newParams.find((p) => p.name === oldP.name && p.in === oldP.in);
+		const newP = newParams.find(
+			(p) => p.name === oldP.name && p.in === oldP.in,
+		);
 		if (!newP) {
 			changes.push({
 				id: "PARAMETER_REMOVED",
@@ -142,7 +143,9 @@ function compareOperations(
 	}
 
 	for (const newP of newParams) {
-		const oldP = oldParams.find((p) => p.name === newP.name && p.in === newP.in);
+		const oldP = oldParams.find(
+			(p) => p.name === newP.name && p.in === newP.in,
+		);
 		if (!oldP && newP.required) {
 			changes.push({
 				id: "PARAMETER_ADDED_REQUIRED",
@@ -161,7 +164,11 @@ function compareOperations(
 			message: "Request body was removed",
 			type: "breaking",
 		});
-	} else if (!oldOp.requestBody && newOp.requestBody && newOp.requestBody.required) {
+	} else if (
+		!oldOp.requestBody &&
+		newOp.requestBody &&
+		newOp.requestBody.required
+	) {
 		changes.push({
 			id: "REQUEST_BODY_ADDED_REQUIRED",
 			path: opPath,

@@ -1,5 +1,9 @@
-import type { OpenAPISpec, ValidationResult, OpenAPISchema } from "../types.js";
-import { type OperationEntry, getAllOperations, resolveRef } from "../utils/loader.js";
+import type { OpenAPISchema, OpenAPISpec, ValidationResult } from "../types.js";
+import {
+	getAllOperations,
+	type OperationEntry,
+	resolveRef,
+} from "../utils/loader.js";
 
 /**
  * Category: Response Design (20 checks, 10 automated)

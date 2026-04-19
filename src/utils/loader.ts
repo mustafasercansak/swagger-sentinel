@@ -2,9 +2,9 @@ import SwaggerParser from "@apidevtools/json-schema-ref-parser";
 import fs from "fs";
 import path from "path";
 import type {
+	OpenAPIOperation,
 	OpenAPIPathItem,
 	OpenAPISpec,
-	OpenAPIOperation,
 } from "../types.js";
 
 /**

@@ -1,9 +1,9 @@
-import type { OpenAPISpec } from "../types.js";
+import type { OpenAPISchema, OpenAPISpec } from "../types.js";
 
 /**
  * Utility to generate Faker.js code strings based on OpenAPI schemas.
  */
-export function getFakerCall(propName: string, schema: any): string {
+export function getFakerCall(propName: string, schema: OpenAPISchema): string {
 	// 1. Check for x-faker vendor extension
 	if (schema["x-faker"]) {
 		return `faker.${schema["x-faker"]}()`;
@@ -81,13 +81,16 @@ export function getFakerCall(propName: string, schema: any): string {
 /**
  * Generate a full object literal with Faker calls.
  */
-export function generateFakeObject(schema: any, spec: OpenAPISpec): string {
+export function generateFakeObject(
+	schema: OpenAPISchema,
+	_spec: OpenAPISpec,
+): string {
 	if (schema.type !== "object" || !schema.properties) {
 		return "{}";
 	}
 
 	const props: string[] = [];
-	for (const [name, propSchema] of Object.entries(schema.properties as any)) {
+	for (const [name, propSchema] of Object.entries(schema.properties)) {
 		props.push(`      ${name}: ${getFakerCall(name, propSchema)}`);
 	}
 

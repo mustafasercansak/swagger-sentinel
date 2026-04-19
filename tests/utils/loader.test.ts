@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
-import { loadSpec, resolveRef, getAllOperations } from "../../src/utils/loader.js";
+import SwaggerParser from "@apidevtools/json-schema-ref-parser";
 import fs from "fs";
 import path from "path";
-import SwaggerParser from "@apidevtools/json-schema-ref-parser";
+import { describe, expect, it, vi } from "vitest";
+import {
+	getAllOperations,
+	loadSpec,
+	resolveRef,
+} from "../../src/utils/loader.js";
 
 vi.mock("fs");
 vi.mock("@apidevtools/json-schema-ref-parser");
@@ -10,14 +14,18 @@ vi.mock("@apidevtools/json-schema-ref-parser");
 describe("loader.ts", () => {
 	describe("loadSpec", () => {
 		it("should load a valid JSON spec", async () => {
-			const mockSpec = { openapi: "3.0.0", info: { title: "Test", version: "1.0.0" }, paths: {} };
+			const mockSpec = {
+				openapi: "3.0.0",
+				info: { title: "Test", version: "1.0.0" },
+				paths: {},
+			};
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-			
+
 			const mockParser = {
-				dereference: vi.fn().mockResolvedValue(mockSpec)
+				dereference: vi.fn().mockResolvedValue(mockSpec),
 			};
 			vi.mocked(SwaggerParser).mockImplementation(() => mockParser as any);
-			
+
 			const spec = await loadSpec("test.json");
 			expect(spec.openapi).toBe("3.0.0");
 		});
@@ -28,15 +36,20 @@ describe("loader.ts", () => {
 		});
 
 		it("should throw if not a valid OpenAPI version", async () => {
-			const mockSpec = { openapi: "2.0.0", info: { title: "Test", version: "1.0.0" } };
+			const mockSpec = {
+				openapi: "2.0.0",
+				info: { title: "Test", version: "1.0.0" },
+			};
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-			
+
 			const mockParser = {
-				dereference: vi.fn().mockResolvedValue(mockSpec)
+				dereference: vi.fn().mockResolvedValue(mockSpec),
 			};
 			vi.mocked(SwaggerParser).mockImplementation(() => mockParser as any);
-			
-			await expect(loadSpec("test.json")).rejects.toThrow("Unsupported OpenAPI version");
+
+			await expect(loadSpec("test.json")).rejects.toThrow(
+				"Unsupported OpenAPI version",
+			);
 		});
 	});
 
@@ -44,9 +57,9 @@ describe("loader.ts", () => {
 		const spec = {
 			components: {
 				schemas: {
-					User: { type: "object" }
-				}
-			}
+					User: { type: "object" },
+				},
+			},
 		} as any;
 
 		it("should resolve a valid reference", () => {
@@ -66,12 +79,12 @@ describe("loader.ts", () => {
 				paths: {
 					"/users": {
 						get: { operationId: "getUsers" },
-						post: { operationId: "createUser" }
+						post: { operationId: "createUser" },
 					},
 					"/products": {
-						put: { operationId: "updateProduct" }
-					}
-				}
+						put: { operationId: "updateProduct" },
+					},
+				},
 			} as any;
 
 			const ops = getAllOperations(spec);

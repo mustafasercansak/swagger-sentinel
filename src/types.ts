@@ -28,11 +28,31 @@ export interface OpenAPISchema {
 	properties?: Record<string, OpenAPISchema>;
 	items?: OpenAPISchema;
 	required?: string[];
-	enum?: any[];
-	example?: any;
+	enum?: unknown[];
+	example?: unknown;
 	description?: string;
 	$ref?: string;
-	[key: string]: any; // Allow for vendor extensions
+	[key: string]: unknown; // Allow for vendor extensions
+}
+
+export interface OpenAPIResponse {
+	description: string;
+	content?: Record<
+		string,
+		{ schema: OpenAPISchema; example?: unknown; examples?: unknown }
+	>;
+	headers?: Record<string, unknown>;
+	$ref?: string;
+}
+
+export interface OpenAPIRequestBody {
+	description?: string;
+	content: Record<
+		string,
+		{ schema: OpenAPISchema; example?: unknown; examples?: unknown }
+	>;
+	required?: boolean;
+	$ref?: string;
 }
 
 export interface OpenAPIOperation {
@@ -41,24 +61,11 @@ export interface OpenAPIOperation {
 	description?: string;
 	operationId?: string;
 	parameters?: OpenAPIParameter[];
-	requestBody?: {
-		description?: string;
-		content: Record<string, { schema: OpenAPISchema; example?: any; examples?: any }>;
-		required?: boolean;
-		$ref?: string;
-	};
-	responses: Record<
-		string,
-		{
-			description: string;
-			content?: Record<string, { schema: OpenAPISchema; example?: any; examples?: any }>;
-			headers?: Record<string, any>;
-			$ref?: string;
-		}
-	>;
+	requestBody?: OpenAPIRequestBody;
+	responses: Record<string, OpenAPIResponse>;
 	deprecated?: boolean;
 	security?: Array<Record<string, string[]>>;
-	[key: string]: any; // Vendor extensions
+	[key: string]: unknown; // Vendor extensions
 }
 
 export interface OpenAPIPathItem {
@@ -79,7 +86,7 @@ export interface OpenAPISecurityScheme {
 	in?: "query" | "header" | "cookie";
 	scheme?: string;
 	bearerFormat?: string;
-	flows?: any;
+	flows?: unknown;
 	openIdConnectUrl?: string;
 }
 
@@ -107,22 +114,22 @@ export interface OpenAPISpec {
 	paths: Record<string, OpenAPIPathItem>;
 	components?: {
 		schemas?: Record<string, OpenAPISchema>;
-		responses?: Record<string, any>;
-		parameters?: Record<string, OpenAPIParameter>;
-		examples?: Record<string, any>;
-		requestBodies?: Record<string, any>;
-		headers?: Record<string, any>;
+		responses?: Record<string, OpenAPIResponse | Record<string, unknown>>;
+		parameters?: Record<string, OpenAPIParameter | Record<string, unknown>>;
+		examples?: Record<string, unknown>;
+		requestBodies?: Record<string, OpenAPIRequestBody | Record<string, unknown>>;
+		headers?: Record<string, unknown>;
 		securitySchemes?: Record<string, OpenAPISecurityScheme>;
-		links?: Record<string, any>;
-		callbacks?: Record<string, any>;
+		links?: Record<string, unknown>;
+		callbacks?: Record<string, unknown>;
 	};
 	security?: Array<Record<string, string[]>>;
 	tags?: Array<{
 		name: string;
 		description?: string;
-		externalDocs?: any;
+		externalDocs?: unknown;
 	}>;
-	externalDocs?: any;
+	externalDocs?: unknown;
 }
 
 export interface SentinelConfig {

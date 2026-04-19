@@ -26,7 +26,9 @@ describe("fixer", () => {
 	});
 
 	it("adds missing 400 and 500 responses", () => {
-		const s = spec({ "/pets": { get: { responses: { "200": { description: "ok" } } } } });
+		const s = spec({
+			"/pets": { get: { responses: { "200": { description: "ok" } } } },
+		});
 		applyFixes(s);
 		expect(s.paths["/pets"].get?.responses["400"]).toBeDefined();
 		expect(s.paths["/pets"].get?.responses["500"]).toBeDefined();
@@ -49,8 +51,12 @@ describe("fixer", () => {
 	});
 
 	it("handles path parameters in operationId generation", () => {
-		const s = spec({ "/users/{id}/orders/{orderId}": { get: { responses: {} } } });
+		const s = spec({
+			"/users/{id}/orders/{orderId}": { get: { responses: {} } },
+		});
 		applyFixes(s);
-		expect(s.paths["/users/{id}/orders/{orderId}"].get?.operationId).toBe("getUsersIdOrdersOrderId");
+		expect(s.paths["/users/{id}/orders/{orderId}"].get?.operationId).toBe(
+			"getUsersIdOrdersOrderId",
+		);
 	});
 });

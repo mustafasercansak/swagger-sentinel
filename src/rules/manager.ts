@@ -1,6 +1,6 @@
-import fs from "fs";
-import path from "path";
-import { pathToFileURL } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import type { OpenAPISpec, ValidationResult } from "../types.js";
 import type { CustomValidatorFunction } from "./types.js";
 
@@ -29,8 +29,9 @@ export async function loadCustomRules(
 			} else if (typeof module.validate === "function") {
 				customValidators.push(module.validate);
 			}
-		} catch (err: any) {
-			console.warn(`  ⚠ Failed to load custom rule ${file}: ${err.message}`);
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.warn(`  ⚠ Failed to load custom rule ${file}: ${message}`);
 		}
 	}
 
@@ -49,13 +50,14 @@ export async function runCustomRules(
 		try {
 			const res = await validator(spec);
 			results.push(...res);
-		} catch (err: any) {
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
 			results.push({
 				id: "CUSTOM_ERR",
 				category: "Custom",
 				severity: "error",
 				passed: false,
-				message: `Custom validator failed: ${err.message}`,
+				message: `Custom validator failed: ${message}`,
 			});
 		}
 	}

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { loadCustomRules, runCustomRules } from "../../src/rules/manager.js";
 import fs from "fs";
 import path from "path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCustomRules, runCustomRules } from "../../src/rules/manager.js";
 
 vi.mock("fs");
 
@@ -9,13 +9,19 @@ describe("manager.ts", () => {
 	describe("loadCustomRules", () => {
 		it("should throw if directory does not exist", async () => {
 			vi.mocked(fs.existsSync).mockReturnValue(false);
-			await expect(loadCustomRules("./custom")).rejects.toThrow("Custom rules directory not found");
+			await expect(loadCustomRules("./custom")).rejects.toThrow(
+				"Custom rules directory not found",
+			);
 		});
 
 		it("should load JS/MJS files from directory", async () => {
 			vi.mocked(fs.existsSync).mockReturnValue(true);
-			vi.mocked(fs.readdirSync).mockReturnValue(["rule1.js", "rule2.mjs", "README.md"] as any);
-			
+			vi.mocked(fs.readdirSync).mockReturnValue([
+				"rule1.js",
+				"rule2.mjs",
+				"README.md",
+			] as any);
+
 			// We can't easily mock dynamic imports in a portable way with vitest without more setup,
 			// but we can test that it filters files correctly.
 			// For the sake of this test, we'll assume the import fails in this environment
@@ -28,10 +34,16 @@ describe("manager.ts", () => {
 	describe("runCustomRules", () => {
 		it("should run validators and collect results", async () => {
 			const mockValidator = vi.fn().mockResolvedValue([
-				{ id: "C1", category: "Custom", severity: "error", passed: false, message: "Custom fail" }
+				{
+					id: "C1",
+					category: "Custom",
+					severity: "error",
+					passed: false,
+					message: "Custom fail",
+				},
 			]);
 			const spec = { openapi: "3.0.0" } as any;
-			
+
 			const results = await runCustomRules(spec, [mockValidator]);
 			expect(results).toHaveLength(1);
 			expect(results[0].id).toBe("C1");
@@ -41,7 +53,7 @@ describe("manager.ts", () => {
 		it("should catch errors from validators", async () => {
 			const mockValidator = vi.fn().mockRejectedValue(new Error("Boom"));
 			const spec = { openapi: "3.0.0" } as any;
-			
+
 			const results = await runCustomRules(spec, [mockValidator]);
 			expect(results).toHaveLength(1);
 			expect(results[0].id).toBe("CUSTOM_ERR");

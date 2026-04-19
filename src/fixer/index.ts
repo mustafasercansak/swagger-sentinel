@@ -1,4 +1,4 @@
-import type { OpenAPISpec, OpenAPIOperation } from "../types.js";
+import type { OpenAPIOperation, OpenAPISpec } from "../types.js";
 
 /**
  * Apply safe auto-fixes to an OpenAPI spec.

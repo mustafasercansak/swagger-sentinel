@@ -1,10 +1,16 @@
 import type {
+	OpenAPIParameter,
+	OpenAPIRequestBody,
+	OpenAPIResponse,
+	OpenAPISchema,
 	OpenAPISpec,
 	ValidationResult,
-	OpenAPISchema,
-	OpenAPIParameter,
 } from "../types.js";
-import { type OperationEntry, getAllOperations, resolveRef } from "../utils/loader.js";
+import {
+	getAllOperations,
+	type OperationEntry,
+	resolveRef,
+} from "../utils/loader.js";
 
 /**
  * Category: Request Validation (16 checks, 10 automated)
@@ -104,7 +110,9 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 			// Resolve ref if needed
 			if (op.operation.requestBody.$ref) {
 				const refName = op.operation.requestBody.$ref.split("/").pop() || "";
-				const componentBody = spec.components?.requestBodies?.[refName];
+				const componentBody = spec.components?.requestBodies?.[refName] as
+					| OpenAPIRequestBody
+					| undefined;
 				if (componentBody) {
 					content = componentBody.content || {};
 				}
@@ -194,7 +202,9 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			if (op.operation.requestBody.$ref) {
 				const refName = op.operation.requestBody.$ref.split("/").pop() || "";
-				const componentBody = spec.components?.requestBodies?.[refName];
+				const componentBody = spec.components?.requestBodies?.[refName] as
+					| OpenAPIRequestBody
+					| undefined;
 				if (componentBody) {
 					content = componentBody.content || {};
 				}
@@ -306,7 +316,9 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			if (op.operation.requestBody.$ref) {
 				const refName = op.operation.requestBody.$ref.split("/").pop() || "";
-				const componentBody = spec.components?.requestBodies?.[refName];
+				const componentBody = spec.components?.requestBodies?.[refName] as
+					| OpenAPIRequestBody
+					| undefined;
 				if (componentBody) {
 					content = componentBody.content || {};
 				}
@@ -433,7 +445,9 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			if (op.operation.requestBody.$ref) {
 				const refName = op.operation.requestBody.$ref.split("/").pop() || "";
-				const componentBody = spec.components?.requestBodies?.[refName];
+				const componentBody = spec.components?.requestBodies?.[refName] as
+					| OpenAPIRequestBody
+					| undefined;
 				if (componentBody) {
 					content = componentBody.content || {};
 				}
@@ -483,7 +497,9 @@ export function validateRequests(spec: OpenAPISpec): ValidationResult[] {
 
 			if (op.operation.requestBody.$ref) {
 				const refName = op.operation.requestBody.$ref.split("/").pop() || "";
-				const componentBody = spec.components?.requestBodies?.[refName];
+				const componentBody = spec.components?.requestBodies?.[refName] as
+					| OpenAPIRequestBody
+					| undefined;
 				if (componentBody) {
 					content = componentBody.content || {};
 				}

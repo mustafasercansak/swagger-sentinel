@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
-import { loadConfig } from "../../src/utils/config.js";
 import fs from "fs";
 import path from "path";
+import { describe, expect, it, vi } from "vitest";
+import { loadConfig } from "../../src/utils/config.js";
 
 vi.mock("fs");
 
@@ -10,7 +10,7 @@ describe("config.ts", () => {
 		const mockConfig = { strict: true };
 		vi.mocked(fs.existsSync).mockReturnValue(true);
 		vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockConfig));
-		
+
 		const config = loadConfig();
 		expect(config.strict).toBe(true);
 	});

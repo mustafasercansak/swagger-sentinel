@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { findLineNumber } from "../../src/utils/source-map.js";
 import fs from "fs";
+import { describe, expect, it, vi } from "vitest";
+import { findLineNumber } from "../../src/utils/source-map.js";
 
 vi.mock("fs");
 
@@ -42,7 +42,9 @@ paths:
 	});
 
 	it("should return undefined on file error", () => {
-		vi.mocked(fs.readFileSync).mockImplementation(() => { throw new Error("FS Error"); });
+		vi.mocked(fs.readFileSync).mockImplementation(() => {
+			throw new Error("FS Error");
+		});
 		const line = findLineNumber("test.yaml", "openapi");
 		expect(line).toBeUndefined();
 	});
