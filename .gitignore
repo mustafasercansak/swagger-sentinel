@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
+
+# Build outputs
 /dist
+packages/*/dist
+packages/*/*.vsix
 /lib-cov
 /coverage
 .pnp
@@ -33,7 +37,9 @@ lerna-debug.log*
 .sentinelrc.yaml
 
 # IDEs
-.vscode/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
 .idea/
 *.swp
 *.swo

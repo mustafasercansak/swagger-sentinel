@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"name": "vscode-extension",
+			"path": "packages/vscode"
+		},
+		{
+			"name": "core",
+			"path": "packages/core"
+		},
+		{
+			"name": "root",
+			"path": "."
+		}
+	],
+	"settings": {
+		"typescript.tsdk": "packages/core/node_modules/typescript/lib"
+	}
+}
