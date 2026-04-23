@@ -92,6 +92,67 @@ swagger-sentinel export-spectral > .spectral.yaml
 
 See [docs/CHECKLIST.md](docs/CHECKLIST.md) for the full checklist.
 
+## GitHub Actions
+
+Swagger Sentinel is available on the [GitHub Marketplace](https://github.com/marketplace/actions/swagger-sentinel). Add it to any workflow to validate your OpenAPI spec on every push or pull request:
+
+```yaml
+- name: Validate OpenAPI spec
+  uses: mssak/swagger-sentinel@v1   # replace with your published tag
+  with:
+    spec-path: api.yaml
+```
+
+### Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `spec-path` | ✅ | — | Path to the OpenAPI spec file (`.yaml` or `.json`) |
+| `strict` | | `false` | Treat warnings as errors |
+| `category` | | _(all)_ | Validate only one category (Structure, Paths, Operations, Request, Response, Security, Documentation) |
+| `generate-tests` | | `false` | Generate Vitest TypeScript tests from the spec |
+| `output-dir` | | `generated-tests` | Output directory for generated tests |
+| `base-url` | | `http://localhost:3000` | Base URL used in generated tests |
+
+### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `passed` | Number of checks that passed |
+| `errors` | Number of failed error-level checks |
+| `warnings` | Number of failed warning-level checks |
+| `suggestions` | Number of failed suggestion-level checks |
+| `total` | Total number of checks run |
+
+### Full workflow example
+
+```yaml
+name: API Contract
+on:
+  pull_request:
+    paths: ['**/*.yaml', '**/*.json']
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate OpenAPI spec
+        id: sentinel
+        uses: mssak/swagger-sentinel@v1
+        with:
+          spec-path: api.yaml
+          strict: true
+
+      - name: Print summary
+        if: always()
+        run: |
+          echo "Passed   : ${{ steps.sentinel.outputs.passed }}"
+          echo "Errors   : ${{ steps.sentinel.outputs.errors }}"
+          echo "Warnings : ${{ steps.sentinel.outputs.warnings }}"
+          echo "Total    : ${{ steps.sentinel.outputs.total }}"
+```
+
 ## CI Integration
 
 Swagger Sentinel is built for CI/CD. It natively supports **GitHub Actions Annotations** (to show errors directly on your PR code) and **Job Summaries**.
