@@ -3,9 +3,13 @@
 		"target": "ES2022",
 		"module": "CommonJS",
 		"moduleResolution": "Node10",
+		"baseUrl": ".",
+		"paths": {
+			"swagger-sentinel": ["../core/src/index.ts"]
+		},
 		"ignoreDeprecations": "6.0",
 		"outDir": "dist",
-		"rootDir": "src",
+		"rootDir": "..",
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,

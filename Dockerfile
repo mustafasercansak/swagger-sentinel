@@ -4,11 +4,10 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY packages/core/package*.json ./packages/core/
-COPY packages/vscode/package*.json ./packages/vscode/
 RUN npm install
 
 COPY . .
-RUN npm run build
+RUN npm run build --workspace swagger-sentinel
 
 # Final image
 FROM node:24
@@ -16,11 +15,10 @@ FROM node:24
 WORKDIR /app
 
 # Only need production dependencies in final image
-COPY package*.json ./
+COPY packages/core/package*.json ./
 RUN npm install --omit=dev
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/packages/core/dist ./dist
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
