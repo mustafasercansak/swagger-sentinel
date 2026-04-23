@@ -55,8 +55,18 @@
 				},
 				"swagger-sentinel.specPatterns": {
 					"type": "array",
-					"items": { "type": "string" },
-					"default": ["**/*api*.yaml", "**/*api*.yml", "**/*api*.json", "**/openapi*.yaml", "**/openapi*.yml", "**/swagger*.yaml", "**/swagger*.yml"],
+					"items": {
+						"type": "string"
+					},
+					"default": [
+						"**/*api*.yaml",
+						"**/*api*.yml",
+						"**/*api*.json",
+						"**/openapi*.yaml",
+						"**/openapi*.yml",
+						"**/swagger*.yaml",
+						"**/swagger*.yml"
+					],
 					"description": "Glob patterns to identify OpenAPI spec files"
 				},
 				"swagger-sentinel.outputDir": {

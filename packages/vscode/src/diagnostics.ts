@@ -9,16 +9,21 @@ export class DiagnosticsProvider implements vscode.Disposable {
 	private readonly collection: vscode.DiagnosticCollection;
 
 	constructor() {
-		this.collection = vscode.languages.createDiagnosticCollection("swagger-sentinel");
+		this.collection =
+			vscode.languages.createDiagnosticCollection("swagger-sentinel");
 	}
 
 	isSpecFile(doc: vscode.TextDocument): boolean {
 		if (!["yaml", "json"].includes(doc.languageId)) return false;
 		const config = vscode.workspace.getConfiguration("swagger-sentinel");
 		const patterns = config.get<string[]>("specPatterns", [
-			"**/*api*.yaml", "**/*api*.yml", "**/*api*.json",
-			"**/openapi*.yaml", "**/openapi*.yml",
-			"**/swagger*.yaml", "**/swagger*.yml",
+			"**/*api*.yaml",
+			"**/*api*.yml",
+			"**/*api*.json",
+			"**/openapi*.yaml",
+			"**/openapi*.yml",
+			"**/swagger*.yaml",
+			"**/swagger*.yml",
 		]);
 		return patterns.some((p) => {
 			const pattern = new vscode.RelativePattern(
@@ -29,7 +34,9 @@ export class DiagnosticsProvider implements vscode.Disposable {
 		});
 	}
 
-	async validateDocument(doc: vscode.TextDocument): Promise<ValidationSummary | null> {
+	async validateDocument(
+		doc: vscode.TextDocument,
+	): Promise<ValidationSummary | null> {
 		try {
 			const { loadSpec, validate } = await import("swagger-sentinel");
 			const spec = await loadSpec(doc.uri.fsPath);
@@ -47,7 +54,11 @@ export class DiagnosticsProvider implements vscode.Disposable {
 							? vscode.DiagnosticSeverity.Warning
 							: vscode.DiagnosticSeverity.Hint;
 
-				const diagnostic = new vscode.Diagnostic(range, result.message, severity);
+				const diagnostic = new vscode.Diagnostic(
+					range,
+					result.message,
+					severity,
+				);
 				diagnostic.source = "Swagger Sentinel";
 				diagnostic.code = result.id;
 				diagnostics.push(diagnostic);
@@ -55,12 +66,18 @@ export class DiagnosticsProvider implements vscode.Disposable {
 
 			this.collection.set(doc.uri, diagnostics);
 
-			const errorCount = diagnostics.filter((d) => d.severity === vscode.DiagnosticSeverity.Error).length;
-			const warningCount = diagnostics.filter((d) => d.severity === vscode.DiagnosticSeverity.Warning).length;
+			const errorCount = diagnostics.filter(
+				(d) => d.severity === vscode.DiagnosticSeverity.Error,
+			).length;
+			const warningCount = diagnostics.filter(
+				(d) => d.severity === vscode.DiagnosticSeverity.Warning,
+			).length;
 			return { errorCount, warningCount };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			vscode.window.showErrorMessage(`Swagger Sentinel: Validation failed — ${msg}`);
+			vscode.window.showErrorMessage(
+				`Swagger Sentinel: Validation failed — ${msg}`,
+			);
 			return null;
 		}
 	}

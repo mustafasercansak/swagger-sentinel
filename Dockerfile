@@ -3,6 +3,8 @@ FROM node:24 AS builder
 WORKDIR /app
 
 COPY package*.json ./
+COPY packages/core/package*.json ./packages/core/
+COPY packages/vscode/package*.json ./packages/vscode/
 RUN npm install
 
 COPY . .

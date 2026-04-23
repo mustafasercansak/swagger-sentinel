@@ -4,7 +4,10 @@ export class StatusBarManager implements vscode.Disposable {
 	private readonly item: vscode.StatusBarItem;
 
 	constructor(context: vscode.ExtensionContext) {
-		this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+		this.item = vscode.window.createStatusBarItem(
+			vscode.StatusBarAlignment.Right,
+			100,
+		);
 		this.item.command = "swagger-sentinel.validate";
 		context.subscriptions.push(this.item);
 	}
@@ -12,11 +15,15 @@ export class StatusBarManager implements vscode.Disposable {
 	update(errors: number, warnings: number): void {
 		if (errors > 0) {
 			this.item.text = `$(error) Sentinel: ${errors}E ${warnings}W`;
-			this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+			this.item.backgroundColor = new vscode.ThemeColor(
+				"statusBarItem.errorBackground",
+			);
 			this.item.tooltip = `${errors} error(s), ${warnings} warning(s) — click to re-validate`;
 		} else if (warnings > 0) {
 			this.item.text = `$(warning) Sentinel: ${warnings}W`;
-			this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+			this.item.backgroundColor = new vscode.ThemeColor(
+				"statusBarItem.warningBackground",
+			);
 			this.item.tooltip = `${warnings} warning(s) — click to re-validate`;
 		} else {
 			this.item.text = "$(check) Sentinel: OK";
