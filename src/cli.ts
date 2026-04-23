@@ -2,7 +2,6 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
 import { compareSpecs, type DiffChange } from "./comparator/index.js";
@@ -21,7 +20,6 @@ import { findLineNumber } from "./utils/source-map.js";
 import { validate } from "./validators/index.js";
 
 // Load package.json for versioning
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgPath = path.resolve(__dirname, "../package.json");
 const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 

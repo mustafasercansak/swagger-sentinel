@@ -90,7 +90,7 @@ jobs:
           npm version "$VERSION" --no-git-tag-version --workspace=packages/vscode
       - run: npm run build --workspace=packages/vscode
       - name: Publish extension
-        run: npx vsce publish --pat ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --pat ${{ secrets.VSCE_PAT }} --no-dependencies
         working-directory: packages/vscode
 
   publish-github-release:
