@@ -10,7 +10,7 @@
 	},
 	"files": [
 		"dist",
-		"../../README.md",
+		"README.md",
 		"../../LICENSE",
 		"../../action.yml",
 		"../../Dockerfile",

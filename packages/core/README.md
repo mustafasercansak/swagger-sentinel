@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" width="200" alt="Swagger Sentinel Logo">
+  <img src="https://raw.githubusercontent.com/mustafasercansak/swagger-sentinel/main/assets/logo.png" width="200" alt="Swagger Sentinel Logo">
 </p>
 
 # swagger-sentinel
@@ -20,7 +20,7 @@ Search for **"Swagger Sentinel"** in the VS Code Extensions view, or install it 
 - **Diagnostics**: Errors and warnings highlighted directly in your editor.
 - **Commands**: Generate tests or validate manually via the Command Palette or context menu.
 
-![VS Code Extension Demo](packages/vscode/assets/vscode-demo.png)
+![VS Code Extension Demo](https://raw.githubusercontent.com/mustafasercansak/swagger-sentinel/main/packages/vscode/assets/vscode-demo.png)
 
 ### CLI (NPM)
 
