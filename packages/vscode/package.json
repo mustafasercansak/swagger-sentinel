@@ -30,6 +30,11 @@
 		"onLanguage:json"
 	],
 	"main": "./dist/extension.js",
+	"files": [
+		"dist",
+		"assets",
+		"LICENSE"
+	],
 	"contributes": {
 		"commands": [
 			{
