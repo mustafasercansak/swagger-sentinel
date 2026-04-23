@@ -97,14 +97,11 @@
 		}
 	},
 	"scripts": {
-		"build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+		"build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --alias:swagger-sentinel=../core/src/index.ts --format=cjs --platform=node --sourcemap",
 		"build:watch": "npm run build -- --watch",
 		"type-check": "tsc --noEmit",
 		"package": "vsce package",
 		"publish": "vsce publish"
-	},
-	"dependencies": {
-		"swagger-sentinel": "*"
 	},
 	"devDependencies": {
 		"@types/node": "^25.6.0",
