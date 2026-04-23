@@ -65,3 +65,21 @@ jobs:
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-vscode:
+    name: Publish to VS Code Marketplace
+    needs: [unit-tests, validate-sample]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - run: npm install
+      - run: npm run build --workspace=packages/vscode
+      - name: Publish extension
+        run: npx vsce publish --pat ${{ secrets.VSCE_PAT }}
+        working-directory: packages/vscode
