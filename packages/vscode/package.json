@@ -1,0 +1,101 @@
+{
+	"name": "swagger-sentinel-vscode",
+	"displayName": "Swagger Sentinel",
+	"description": "Real-time OpenAPI 3.x validation, diagnostics and test generation for VS Code",
+	"version": "0.1.0",
+	"publisher": "mustafasercansak",
+	"license": "MIT",
+	"engines": {
+		"vscode": "^1.95.0"
+	},
+	"categories": [
+		"Linters",
+		"Testing",
+		"Other"
+	],
+	"keywords": [
+		"openapi",
+		"swagger",
+		"validator",
+		"api",
+		"yaml"
+	],
+	"icon": "../../assets/logo.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/mustafasercansak/swagger-sentinel"
+	},
+	"activationEvents": [
+		"onLanguage:yaml",
+		"onLanguage:json"
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "swagger-sentinel.validate",
+				"title": "Swagger Sentinel: Validate Spec"
+			},
+			{
+				"command": "swagger-sentinel.generateTests",
+				"title": "Swagger Sentinel: Generate Tests"
+			},
+			{
+				"command": "swagger-sentinel.clearDiagnostics",
+				"title": "Swagger Sentinel: Clear Diagnostics"
+			}
+		],
+		"configuration": {
+			"title": "Swagger Sentinel",
+			"properties": {
+				"swagger-sentinel.autoValidate": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically validate OpenAPI spec on file save"
+				},
+				"swagger-sentinel.specPatterns": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": ["**/*api*.yaml", "**/*api*.yml", "**/*api*.json", "**/openapi*.yaml", "**/openapi*.yml", "**/swagger*.yaml", "**/swagger*.yml"],
+					"description": "Glob patterns to identify OpenAPI spec files"
+				},
+				"swagger-sentinel.outputDir": {
+					"type": "string",
+					"default": "tests/generated",
+					"description": "Output directory for generated test files"
+				}
+			}
+		},
+		"menus": {
+			"editor/context": [
+				{
+					"when": "resourceExtname == .yaml || resourceExtname == .yml || resourceExtname == .json",
+					"command": "swagger-sentinel.validate",
+					"group": "swagger-sentinel"
+				},
+				{
+					"when": "resourceExtname == .yaml || resourceExtname == .yml || resourceExtname == .json",
+					"command": "swagger-sentinel.generateTests",
+					"group": "swagger-sentinel"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+		"build:watch": "npm run build -- --watch",
+		"type-check": "tsc --noEmit",
+		"package": "vsce package",
+		"publish": "vsce publish"
+	},
+	"dependencies": {
+		"swagger-sentinel": "*"
+	},
+	"devDependencies": {
+		"@types/node": "^25.6.0",
+		"@types/vscode": "^1.95.0",
+		"esbuild": "^0.25.0",
+		"typescript": "^6.0.3",
+		"@vscode/vsce": "^3.0.0"
+	}
+}

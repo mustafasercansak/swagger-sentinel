@@ -1,0 +1,23 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"group": "build",
+			"problemMatcher": ["$esbuild-watch"],
+			"label": "npm: build",
+			"detail": "esbuild src/extension.ts --bundle ..."
+		},
+		{
+			"type": "npm",
+			"script": "build:watch",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": ["$esbuild-watch"],
+			"label": "npm: build:watch",
+			"detail": "esbuild watch mode"
+		}
+	]
+}
+

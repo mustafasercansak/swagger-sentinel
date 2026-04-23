@@ -1,0 +1,371 @@
+openapi: 3.0.3
+info:
+  title: Sample Pet Store API
+  version: 1.0.0
+  description: A sample API for testing swagger-sentinel with all rules satisfied and comprehensive documentation.
+  contact:
+    name: API Team
+    email: api@example.com
+    url: https://example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://example.com/terms
+  x-logo:
+    url: ../assets/logo.png
+    altText: Swagger Sentinel Logo
+
+externalDocs:
+  description: Find out more about our API
+  url: https://example.com/docs
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server with secure HTTPS
+
+paths:
+  /pets:
+    get:
+      operationId: pets_list
+      summary: List all pets
+      description: Returns a paginated list of pets with filtering support
+      tags:
+        - Pets
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of pets to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: cursor
+          in: query
+          description: Pagination cursor for pagination support
+          schema:
+            type: string
+            description: The cursor for the next page
+            maxLength: 100
+            example: "YmFzZTY0"
+      responses:
+        '200':
+          description: A list of pets
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                properties:
+                  items:
+                    type: array
+                    maxItems: 100
+                    items:
+                      $ref: '#/components/schemas/Pet'
+                  total:
+                    type: integer
+                    description: Total count of pets
+                    example: 1
+              example:
+                items:
+                  - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    name: "Buddy"
+                    species: "dog"
+                total: 1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    head:
+      operationId: pets_presence
+      summary: Check if pets exist
+      tags:
+        - Pets
+      responses:
+        '200':
+          description: Pets exist
+          content:
+            application/json:
+              schema: { type: object }
+              example: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    post:
+      operationId: pets_add
+      summary: Create a new pet
+      tags:
+        - Pets
+      requestBody:
+        description: Pet to add
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetCreate'
+            example:
+              name: "Buddy"
+              species: "dog"
+      responses:
+        '201':
+          description: Pet created
+          headers:
+            Location:
+              description: URL of the created resource
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                name: "Buddy"
+                species: "dog"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: INVALID_INPUT
+                message: The provided data is invalid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '415':
+          $ref: '#/components/responses/UnsupportedMedia'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        description: The pet's unique identifier (UUID)
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: pets_get_by_id
+      summary: Get a pet by ID
+      tags:
+        - Pets
+      responses:
+        '200':
+          description: The pet detail
+          headers:
+            ETag:
+              description: Entity tag for caching
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                name: "Buddy"
+                species: "dog"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    head:
+      operationId: pets_item_presence
+      summary: Check if a pet exists
+      tags:
+        - Pets
+      responses:
+        '200':
+          description: Pet exists
+          content:
+            application/json:
+              schema: { type: object }
+              example: {}
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      operationId: pets_delete_by_id
+      summary: Delete a pet
+      tags:
+        - Pets
+      responses:
+        '204':
+          description: Pet deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+        - species
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        name:
+          type: string
+          maxLength: 100
+          description: The name of the pet
+          example: "Buddy"
+        species:
+          type: string
+          enum: [dog, cat, bird, fish]
+          description: Animal species
+          example: "dog"
+        age:
+          type: integer
+          minimum: 0
+          maximum: 50
+          description: Age in years
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation date
+          example: "2024-04-18T20:48:31Z"
+
+    PetCreate:
+      type: object
+      required:
+        - name
+        - species
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Pet name
+          example: "Buddy"
+        species:
+          type: string
+          enum: [dog, cat, bird, fish]
+          description: Pet species
+          example: "dog"
+      example:
+        name: "Buddy"
+        species: "dog"
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine readable code
+          example: "NOT_FOUND"
+        message:
+          type: string
+          description: Human readable message
+          example: "Resource not found"
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            code: UNAUTHORIZED
+            message: Invalid credentials
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            code: FORBIDDEN
+            message: Access denied
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            code: NOT_FOUND
+            message: Resource not found
+    RateLimit:
+      description: Too many requests
+      headers:
+        Retry-After:
+          description: Seconds to wait
+          schema: { type: integer }
+        X-RateLimit-Limit:
+          description: Max requests
+          schema: { type: integer }
+        X-RateLimit-Remaining:
+          description: Remaining requests
+          schema: { type: integer }
+        X-RateLimit-Reset:
+          description: Reset time
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            code: RATE_LIMIT
+            message: Slow down
+    UnsupportedMedia:
+      description: Unsupported Media Type
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            code: UNSUPPORTED_MEDIA
+            message: Use application/json
+    ServerError:
+      description: Internal Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            code: INTERNAL_ERROR
+            message: Internal error occurred
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Pets
+    description: Pet management operations and resource tracking
