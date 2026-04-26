@@ -76,12 +76,21 @@ swagger-sentinel watch your-api.yaml
 swagger-sentinel watch your-api.yaml --strict
 ```
 
-### Utilities
+### AI Enrich (Documentation Auto-Fill)
+
+Automatically detect missing `summary` and `description` fields across your operations and schemas, and fill them in using AI — powered by **Google Gemini** or **OpenAI**:
 
 ```bash
-swagger-sentinel syntax your-api.yaml    # quick syntax check
-swagger-sentinel tags your-api.yaml      # list all operation tags
+# Preview changes (dry run)
+swagger-sentinel enrich api.yaml --provider gemini --lang tr
+
+# Write changes back to file
+swagger-sentinel enrich api.yaml --provider gemini --lang tr --write
 ```
+
+**Also available as a one-click action in the [VS Code Extension](#vs-code-extension)!**
+
+### Utilities
 
 ### Spectral Export
 
