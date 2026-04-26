@@ -265,6 +265,20 @@ export async function run(args: string[] = process.argv) {
 					return;
 				}
 
+				console.log(chalk.white(`\nGenerated Improvements:\n`));
+				for (const item of result.items) {
+					console.log(chalk.cyan(`  ● ${item.path}`));
+					if (item.summary) {
+						console.log(chalk.gray(`    Summary: `) + chalk.white(item.summary));
+					}
+					if (item.description) {
+						console.log(
+							chalk.gray(`    Description: `) + chalk.white(item.description),
+						);
+					}
+					console.log("");
+				}
+
 				if (options.write) {
 					const yaml = await import("js-yaml");
 					fs.writeFileSync(specFile, yaml.dump(result.spec), "utf-8");

@@ -11,6 +11,7 @@ export interface EnrichOptions {
 export interface EnrichResult {
 	enrichedCount: number;
 	spec: OpenAPISpec;
+	items: { id: string; path: string; summary?: string; description?: string }[];
 }
 
 export async function enrichSpec(
@@ -79,45 +80,68 @@ export async function enrichSpec(
 	}
 
 	if (missingItems.length === 0) {
-		return { enrichedCount: 0, spec };
+		return { enrichedCount: 0, spec, items: [] };
 	}
 
 	// 3. Batch Call to LLM
 	const llm = createLLMProvider(options.provider, options.apiKey);
 	const enrichedItems = await llm.enrichBatch(missingItems, options.lang);
 
+	const resultsForLog: { id: string; path: string; summary?: string; description?: string }[] = [];
 	let count = 0;
 
 	// 4. Merge results back into the spec
 	for (const item of enrichedItems) {
+		const missingItem = missingItems.find((m) => m.id === item.id);
+		if (!missingItem) continue;
+
+		let changed = false;
 		if (item.id.startsWith("op:")) {
 			// Extract method and path
 			const parts = item.id.split(":");
 			const method = parts[1];
 			const pathStr = parts.slice(2).join(":"); // in case path has colons
 
-			const operation = (spec.paths as Record<string, Record<string, Record<string, string>>>)?.[pathStr]?.[method];
+			const operation = (spec.paths as Record<
+				string,
+				Record<string, Record<string, string>>
+			>)?.[pathStr]?.[method];
 			if (operation) {
 				if (!operation.summary && item.summary) {
 					operation.summary = item.summary;
 					count++;
+					changed = true;
 				}
 				if (!operation.description && item.description) {
 					operation.description = item.description;
 					count++;
+					changed = true;
 				}
 			}
 		} else if (item.id.startsWith("schema:")) {
 			const schemaName = item.id.split(":")[1];
-			const schemaObj = (spec.components?.schemas as Record<string, Record<string, string>>)?.[schemaName];
+			const schemaObj = (spec.components?.schemas as Record<
+				string,
+				Record<string, string>
+			>)?.[schemaName];
 			if (schemaObj) {
 				if (!schemaObj.description && item.description) {
 					schemaObj.description = item.description;
 					count++;
+					changed = true;
 				}
 			}
 		}
+
+		if (changed) {
+			resultsForLog.push({
+				id: item.id,
+				path: missingItem.path,
+				summary: item.summary,
+				description: item.description,
+			});
+		}
 	}
 
-	return { enrichedCount: count, spec };
+	return { enrichedCount: count, spec, items: resultsForLog };
 }
