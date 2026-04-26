@@ -43,6 +43,10 @@
 			{
 				"command": "swagger-sentinel.clearDiagnostics",
 				"title": "Swagger Sentinel: Clear Diagnostics"
+			},
+			{
+				"command": "swagger-sentinel.enrich",
+				"title": "Swagger Sentinel: AI Enrich Documentation"
 			}
 		],
 		"configuration": {
@@ -73,6 +77,25 @@
 					"type": "string",
 					"default": "tests/generated",
 					"description": "Output directory for generated test files"
+				},
+				"swagger-sentinel.ai.provider": {
+					"type": "string",
+					"enum": [
+						"gemini",
+						"openai"
+					],
+					"default": "gemini",
+					"description": "AI provider for documentation enrichment"
+				},
+				"swagger-sentinel.ai.apiKey": {
+					"type": "string",
+					"default": "",
+					"description": "API Key for the selected AI provider"
+				},
+				"swagger-sentinel.ai.language": {
+					"type": "string",
+					"default": "en",
+					"description": "Language for AI-generated documentation"
 				}
 			}
 		},
@@ -86,6 +109,11 @@
 				{
 					"when": "resourceExtname == .yaml || resourceExtname == .yml || resourceExtname == .json",
 					"command": "swagger-sentinel.generateTests",
+					"group": "swagger-sentinel"
+				},
+				{
+					"when": "resourceExtname == .yaml || resourceExtname == .yml || resourceExtname == .json",
+					"command": "swagger-sentinel.enrich",
 					"group": "swagger-sentinel"
 				}
 			]
