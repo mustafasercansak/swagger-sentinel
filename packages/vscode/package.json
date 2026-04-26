@@ -34,19 +34,27 @@
 		"commands": [
 			{
 				"command": "swagger-sentinel.validate",
-				"title": "Swagger Sentinel: Validate Spec"
+				"title": "Validate Spec"
 			},
 			{
 				"command": "swagger-sentinel.generateTests",
-				"title": "Swagger Sentinel: Generate Tests"
+				"title": "Generate Tests"
 			},
 			{
 				"command": "swagger-sentinel.clearDiagnostics",
-				"title": "Swagger Sentinel: Clear Diagnostics"
+				"title": "Clear Diagnostics"
 			},
 			{
 				"command": "swagger-sentinel.enrich",
-				"title": "Swagger Sentinel: AI Enrich Documentation"
+				"title": "AI Enrich Documentation"
+			},
+			{
+				"command": "swagger-sentinel.setApiKey",
+				"title": "Set AI API Key"
+			},
+			{
+				"command": "swagger-sentinel.clearApiKey",
+				"title": "Clear Stored AI API Keys"
 			}
 		],
 		"configuration": {
@@ -87,11 +95,6 @@
 					"default": "gemini",
 					"description": "AI provider for documentation enrichment"
 				},
-				"swagger-sentinel.ai.apiKey": {
-					"type": "string",
-					"default": "",
-					"description": "API Key for the selected AI provider"
-				},
 				"swagger-sentinel.ai.language": {
 					"type": "string",
 					"default": "en",
@@ -114,7 +117,17 @@
 				{
 					"when": "resourceExtname == .yaml || resourceExtname == .yml || resourceExtname == .json",
 					"command": "swagger-sentinel.enrich",
-					"group": "swagger-sentinel"
+					"group": "swagger-sentinel@1"
+				},
+				{
+					"when": "resourceExtname == .yaml || resourceExtname == .yml || resourceExtname == .json",
+					"command": "swagger-sentinel.setApiKey",
+					"group": "swagger-sentinel@2"
+				},
+				{
+					"when": "resourceExtname == .yaml || resourceExtname == .yml || resourceExtname == .json",
+					"command": "swagger-sentinel.clearApiKey",
+					"group": "swagger-sentinel@2"
 				}
 			]
 		}

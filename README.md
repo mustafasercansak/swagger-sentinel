@@ -69,7 +69,9 @@ Generate **TypeScript** Vitest test suites from your spec. Now includes **Faker.
 
 ### AI Enrich (Documentation Auto-Fill)
 
-Automatically detect missing `summary` and `description` fields across your operations and schemas, and fill them in using AI — powered by **Google Gemini** or **OpenAI**:
+Automatically detect missing `summary` and `description` fields across your operations and schemas, and fill them in using AI — powered by **Google Gemini** or **OpenAI**. 
+
+**Available in both CLI and [VS Code Extension](#vs-code-extension)!**
 
 ```bash
 # Preview what would be generated (dry run — no file changes)

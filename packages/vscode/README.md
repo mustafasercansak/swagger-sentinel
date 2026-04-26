@@ -19,7 +19,19 @@ Swagger Sentinel brings the power of the 130-point OpenAPI checklist directly to
 
 ![Test Generation](assets/test-gen.png)
 - **130-Point Checklist**: Covers Structure, Paths, Operations, Requests, Responses, Security, and Documentation.
+- **AI Documentation Enrichment**: Automatically fill missing summaries and descriptions using Gemini or OpenAI.
+- **Secure Storage**: API keys are stored securely using VS Code's SecretStorage (not in plain text).
 - **Custom Rules Support**: Loads rules from your `.sentinelrc` or custom rules directory.
+
+## AI Documentation Enrichment
+
+Stop writing boring descriptions! Swagger Sentinel can now use AI to analyze your API paths and models to generate high-quality summaries and descriptions in seconds.
+
+![AI Settings](assets/ai-settings.png)
+
+1. Set your API provider in settings (`gemini` or `openai`).
+2. Right-click in your YAML file and select **Swagger Sentinel: AI Enrich Documentation**.
+3. Your spec is instantly updated with contextual documentation.
 
 ## Getting Started
 
@@ -58,6 +70,8 @@ Swagger Sentinel will respect your project's `.sentinelrc` configuration for ign
 
 - `Swagger Sentinel: Validate Spec`: Runs the full 130-point checklist.
 - `Swagger Sentinel: Generate Tests`: Generates TypeScript Vitest tests.
+- `Swagger Sentinel: AI Enrich Documentation`: Automatically fills missing docs using AI.
+- `Swagger Sentinel: Set API Key`: Securely stores your Gemini/OpenAI API key.
 - `Swagger Sentinel: Clear Diagnostics`: Clears all highlights from the editor.
 
 ## Related
