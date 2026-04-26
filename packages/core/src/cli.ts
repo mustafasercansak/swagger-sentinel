@@ -210,6 +210,104 @@ export async function run(args: string[] = process.argv) {
 		});
 
 	// =====================================================
+	// ENRICH (AI)
+	// =====================================================
+	program
+		.command("enrich <specFile>")
+		.description(
+			"Use AI to automatically fill missing summaries and descriptions",
+		)
+		.option(
+			"--provider <provider>",
+			"LLM Provider to use (gemini or openai)",
+			"gemini",
+		)
+		.option("--lang <lang>", "Language for generated docs (e.g. en, tr)", "en")
+		.option("--write", "Write changes back to the file")
+		.action(async (specFile: string, options: Record<string, unknown>) => {
+			try {
+				const provider = options.provider as "gemini" | "openai";
+				const lang = options.lang as string;
+				const apiKey =
+					provider === "gemini"
+						? process.env.GEMINI_API_KEY
+						: process.env.OPENAI_API_KEY;
+
+				if (!apiKey) {
+					console.error(
+						chalk.red(
+							`\n✗ Error: Missing API key. Please set ${provider === "gemini" ? "GEMINI_API_KEY" : "OPENAI_API_KEY"} environment variable.\n`,
+						),
+					);
+					process.exit(1);
+				}
+
+				console.log(
+					chalk.cyan(`\n✨ Analyzing ${specFile} for missing documentation...`),
+				);
+				const spec = await loadSpec(specFile);
+
+				const { enrichSpec } = await import("./enricher/index.js");
+
+				console.log(
+					chalk.gray(
+						`   Calling ${provider} API to generate descriptions (Language: ${lang})...`,
+					),
+				);
+				const result = await enrichSpec(spec, { provider, apiKey, lang });
+
+				if (result.enrichedCount === 0) {
+					console.log(
+						chalk.green(
+							`\n✓ No missing documentation found. Your spec is fully documented!\n`,
+						),
+					);
+					return;
+				}
+
+				console.log(chalk.white(`\nGenerated Improvements:\n`));
+				for (const item of result.items) {
+					console.log(chalk.cyan(`  ● ${item.path}`));
+					if (item.summary) {
+						console.log(
+							chalk.gray(`    Summary: `) + chalk.white(item.summary),
+						);
+					}
+					if (item.description) {
+						console.log(
+							chalk.gray(`    Description: `) + chalk.white(item.description),
+						);
+					}
+					console.log("");
+				}
+
+				if (options.write) {
+					const yaml = await import("js-yaml");
+					fs.writeFileSync(specFile, yaml.dump(result.spec), "utf-8");
+					console.log(
+						chalk.green(
+							`\n✓ Successfully enriched and updated ${result.enrichedCount} field(s) in ${specFile}\n`,
+						),
+					);
+				} else {
+					console.log(
+						chalk.yellow(
+							`\n⚠ Found and generated ${result.enrichedCount} missing field(s).`,
+						),
+					);
+					console.log(
+						chalk.gray(
+							`  Run with --write flag to save these changes to the file.\n`,
+						),
+					);
+				}
+			} catch (err: unknown) {
+				const error = err as Error;
+				console.error(chalk.red(`\n✗ Error: ${error.message}\n`));
+				process.exit(1);
+			}
+		});
+	// =====================================================
 	// WATCH
 	// =====================================================
 	program

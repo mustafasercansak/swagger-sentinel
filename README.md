@@ -67,6 +67,44 @@ Generate **TypeScript** Vitest test suites from your spec. Now includes **Faker.
  
  The generator automatically maps semantic field names (like `email`, `firstName`, `birthDate`) to realistic mock data.
 
+### AI Enrich (Documentation Auto-Fill)
+
+Automatically detect missing `summary` and `description` fields across your operations and schemas, and fill them in using AI — powered by **Google Gemini** or **OpenAI**. 
+
+**Available in both CLI and [VS Code Extension](#vs-code-extension)!**
+
+```bash
+# Preview what would be generated (dry run — no file changes)
+swagger-sentinel enrich your-api.yaml --provider gemini
+
+# Write AI-generated docs directly back to the file
+swagger-sentinel enrich your-api.yaml --provider gemini --write
+
+# Use OpenAI instead of Gemini
+swagger-sentinel enrich your-api.yaml --provider openai --write
+
+# Generate documentation in Turkish (defaults to English)
+swagger-sentinel enrich your-api.yaml --lang tr --write
+```
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--provider` | `gemini` | LLM provider to use (`gemini` or `openai`) |
+| `--lang` | `en` | Language for generated docs (e.g. `en`, `tr`, `de`) |
+| `--write` | — | Write changes back to the spec file |
+
+**API Key Setup:**
+
+```bash
+# For Google Gemini
+export GEMINI_API_KEY="your-api-key"
+
+# For OpenAI
+export OPENAI_API_KEY="your-api-key"
+```
+
 ### Watch Mode
 
 Re-validate on every file change:
