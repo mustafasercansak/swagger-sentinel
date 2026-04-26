@@ -65,7 +65,7 @@ jobs:
       - name: Align core package version with tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          npm version "$VERSION" --no-git-tag-version --workspace=packages/core
+          npm version "$VERSION" --no-git-tag-version --allow-same-version --workspace=packages/core
       - run: npm run build --workspace=packages/core
       - run: npm publish --workspace=packages/core
         env:
@@ -87,7 +87,7 @@ jobs:
       - name: Align VS Code extension version with tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          npm version "$VERSION" --no-git-tag-version --workspace=packages/vscode
+          npm version "$VERSION" --no-git-tag-version --allow-same-version --workspace=packages/vscode
       - run: npm run build --workspace=packages/vscode
       - name: Publish extension
         run: npx vsce publish --pat ${{ secrets.VSCE_PAT }} --no-dependencies
