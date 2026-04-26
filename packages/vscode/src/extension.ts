@@ -63,13 +63,16 @@ export function activate(context: vscode.ExtensionContext): void {
 			}
 		}),
 
-		vscode.commands.registerCommand("swagger-sentinel.clearApiKey", async () => {
-			await context.secrets.delete("gemini_api_key");
-			await context.secrets.delete("openai_api_key");
-			vscode.window.showInformationMessage(
-				"Swagger Sentinel: All stored AI API keys have been cleared.",
-			);
-		}),
+		vscode.commands.registerCommand(
+			"swagger-sentinel.clearApiKey",
+			async () => {
+				await context.secrets.delete("gemini_api_key");
+				await context.secrets.delete("openai_api_key");
+				vscode.window.showInformationMessage(
+					"Swagger Sentinel: All stored AI API keys have been cleared.",
+				);
+			},
+		),
 
 		vscode.workspace.onDidSaveTextDocument(async (doc) => {
 			const config = vscode.workspace.getConfiguration("swagger-sentinel");
@@ -152,8 +155,9 @@ async function enrichDocumentation(
 ): Promise<void> {
 	const config = vscode.workspace.getConfiguration("swagger-sentinel");
 
-	const provider =
-		config.get<string>("ai.provider", "gemini") as "gemini" | "openai";
+	const provider = config.get<string>("ai.provider", "gemini") as
+		| "gemini"
+		| "openai";
 	const lang = config.get<string>("ai.language", "en");
 
 	const secretKey = provider === "gemini" ? "gemini_api_key" : "openai_api_key";

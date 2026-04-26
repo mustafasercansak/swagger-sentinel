@@ -269,7 +269,9 @@ export async function run(args: string[] = process.argv) {
 				for (const item of result.items) {
 					console.log(chalk.cyan(`  ● ${item.path}`));
 					if (item.summary) {
-						console.log(chalk.gray(`    Summary: `) + chalk.white(item.summary));
+						console.log(
+							chalk.gray(`    Summary: `) + chalk.white(item.summary),
+						);
 					}
 					if (item.description) {
 						console.log(

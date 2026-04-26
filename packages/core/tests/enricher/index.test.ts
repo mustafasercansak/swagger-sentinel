@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { enrichSpec } from "../../src/enricher/index.js";
 import type { OpenAPISpec } from "../../src/types.js";
 
@@ -8,9 +8,9 @@ vi.mock("../../src/enricher/llm.js", () => {
 	return {
 		createLLMProvider: vi.fn().mockImplementation(() => {
 			return {
-				enrichBatch: mockEnrichBatch
+				enrichBatch: mockEnrichBatch,
 			};
-		})
+		}),
 	};
 });
 
@@ -28,21 +28,25 @@ describe("AI Enricher", () => {
 					get: {
 						summary: "Get test",
 						description: "Gets the test item",
-						responses: { "200": { description: "OK" } }
-					}
-				}
+						responses: { "200": { description: "OK" } },
+					},
+				},
 			},
 			components: {
 				schemas: {
 					TestItem: {
 						type: "object",
-						description: "A test item schema"
-					}
-				}
-			}
+						description: "A test item schema",
+					},
+				},
+			},
 		};
 
-		const result = await enrichSpec(spec, { provider: "gemini", apiKey: "test", lang: "en" });
+		const result = await enrichSpec(spec, {
+			provider: "gemini",
+			apiKey: "test",
+			lang: "en",
+		});
 
 		expect(result.enrichedCount).toBe(0);
 		expect(mockEnrichBatch).not.toHaveBeenCalled();
@@ -55,52 +59,63 @@ describe("AI Enricher", () => {
 			paths: {
 				"/test": {
 					get: {
-						responses: { "200": { description: "OK" } }
-					}
-				}
+						responses: { "200": { description: "OK" } },
+					},
+				},
 			},
 			components: {
 				schemas: {
 					TestItem: {
-						type: "object"
-					}
-				}
-			}
+						type: "object",
+					},
+				},
+			},
 		};
 
 		mockEnrichBatch.mockResolvedValueOnce([
 			{
 				id: "op:get:/test",
 				summary: "New summary",
-				description: "New description"
+				description: "New description",
 			},
 			{
 				id: "schema:TestItem",
-				description: "New schema description"
-			}
+				description: "New schema description",
+			},
 		]);
 
-		const result = await enrichSpec(spec, { provider: "gemini", apiKey: "test", lang: "en" });
+		const result = await enrichSpec(spec, {
+			provider: "gemini",
+			apiKey: "test",
+			lang: "en",
+		});
 
 		expect(result.enrichedCount).toBe(3); // summary + description + schema description
 		expect(mockEnrichBatch).toHaveBeenCalledTimes(1);
 
 		// Assert it was patched correctly
-		const operation = (result.spec.paths as any)["/test"]["get"];
+		// biome-ignore lint/suspicious/noExplicitAny: testing purposes
+		const operation = (result.spec.paths as Record<string, any>)["/test"].get;
 		expect(operation.summary).toBe("New summary");
 		expect(operation.description).toBe("New description");
 
-		const schema = (result.spec.components?.schemas as any)["TestItem"];
+		// biome-ignore lint/suspicious/noExplicitAny: testing purposes
+		const schema = (result.spec.components?.schemas as Record<string, any>)
+			.TestItem;
 		expect(schema.description).toBe("New schema description");
 	});
 
 	it("should handle missing paths and components objects gracefully", async () => {
 		const spec: OpenAPISpec = {
 			openapi: "3.0.0",
-			info: { title: "Test", version: "1.0.0" }
+			info: { title: "Test", version: "1.0.0" },
 		};
 
-		const result = await enrichSpec(spec, { provider: "gemini", apiKey: "test", lang: "en" });
+		const result = await enrichSpec(spec, {
+			provider: "gemini",
+			apiKey: "test",
+			lang: "en",
+		});
 
 		expect(result.enrichedCount).toBe(0);
 		expect(mockEnrichBatch).not.toHaveBeenCalled();

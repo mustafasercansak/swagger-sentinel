@@ -47,7 +47,7 @@ export class GeminiProvider implements LLMProvider {
 
 		try {
 			return JSON.parse(cleanResponse) as EnrichedItem[];
-		} catch (err) {
+		} catch (_err) {
 			throw new Error(
 				"Failed to parse Gemini response as JSON. Response was: " +
 					cleanResponse,

@@ -1,5 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { GeminiProvider, OpenAIProvider, createLLMProvider } from "../../src/enricher/llm.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	createLLMProvider,
+	GeminiProvider,
+	OpenAIProvider,
+} from "../../src/enricher/llm.js";
 import type { MissingItem } from "../../src/enricher/types.js";
 
 // Use vi.hoisted so these are available inside vi.mock factory (which is hoisted to top of file)
@@ -23,7 +27,7 @@ global.fetch = fetchMock;
 describe("LLM Providers", () => {
 	const mockItems: MissingItem[] = [
 		{ id: "op:get:/users", type: "operation", path: "GET /users", context: {} },
-		{ id: "schema:User", type: "schema", path: "User", context: {} }
+		{ id: "schema:User", type: "schema", path: "User", context: {} },
 	];
 
 	beforeEach(() => {
@@ -44,7 +48,9 @@ describe("LLM Providers", () => {
 		});
 
 		it("should throw for unsupported provider", () => {
-			expect(() => createLLMProvider("anthropic", "test-key")).toThrowError(/Unsupported LLM provider/);
+			expect(() => createLLMProvider("anthropic", "test-key")).toThrowError(
+				/Unsupported LLM provider/,
+			);
 		});
 	});
 
@@ -52,8 +58,9 @@ describe("LLM Providers", () => {
 		it("should parse valid JSON response", async () => {
 			generateContentMock.mockResolvedValueOnce({
 				response: {
-					text: () => "```json\n[{\"id\":\"op:get:/users\",\"summary\":\"Get users\",\"description\":\"Retrieves users\"}]\n```"
-				}
+					text: () =>
+						'```json\n[{"id":"op:get:/users","summary":"Get users","description":"Retrieves users"}]\n```',
+				},
 			});
 
 			const provider = new GeminiProvider("test-key");
@@ -66,12 +73,14 @@ describe("LLM Providers", () => {
 		it("should throw on invalid JSON response", async () => {
 			generateContentMock.mockResolvedValueOnce({
 				response: {
-					text: () => "This is not JSON"
-				}
+					text: () => "This is not JSON",
+				},
 			});
 
 			const provider = new GeminiProvider("test-key");
-			await expect(provider.enrichBatch(mockItems, "en")).rejects.toThrowError(/Failed to parse Gemini response/);
+			await expect(provider.enrichBatch(mockItems, "en")).rejects.toThrowError(
+				/Failed to parse Gemini response/,
+			);
 		});
 	});
 
@@ -81,9 +90,14 @@ describe("LLM Providers", () => {
 				ok: true,
 				json: async () => ({
 					choices: [
-						{ message: { content: "[{\"id\":\"schema:User\",\"summary\":\"User schema\",\"description\":\"Represents a user\"}]" } }
-					]
-				})
+						{
+							message: {
+								content:
+									'[{"id":"schema:User","summary":"User schema","description":"Represents a user"}]',
+							},
+						},
+					],
+				}),
 			});
 
 			const provider = new OpenAIProvider("test-key");
@@ -91,32 +105,37 @@ describe("LLM Providers", () => {
 
 			expect(result).toHaveLength(1);
 			expect(result[0].summary).toBe("User schema");
-			expect(fetchMock).toHaveBeenCalledWith("https://api.openai.com/v1/chat/completions", expect.any(Object));
+			expect(fetchMock).toHaveBeenCalledWith(
+				"https://api.openai.com/v1/chat/completions",
+				expect.any(Object),
+			);
 		});
 
 		it("should throw on fetch error", async () => {
 			fetchMock.mockResolvedValueOnce({
 				ok: false,
 				status: 401,
-				text: async () => "Unauthorized"
+				text: async () => "Unauthorized",
 			});
 
 			const provider = new OpenAIProvider("test-key");
-			await expect(provider.enrichBatch(mockItems, "en")).rejects.toThrowError(/OpenAI API error: 401 Unauthorized/);
+			await expect(provider.enrichBatch(mockItems, "en")).rejects.toThrowError(
+				/OpenAI API error: 401 Unauthorized/,
+			);
 		});
 
 		it("should throw on invalid JSON response", async () => {
 			fetchMock.mockResolvedValueOnce({
 				ok: true,
 				json: async () => ({
-					choices: [
-						{ message: { content: "Invalid JSON" } }
-					]
-				})
+					choices: [{ message: { content: "Invalid JSON" } }],
+				}),
 			});
 
 			const provider = new OpenAIProvider("test-key");
-			await expect(provider.enrichBatch(mockItems, "en")).rejects.toThrowError(/Failed to parse OpenAI response/);
+			await expect(provider.enrichBatch(mockItems, "en")).rejects.toThrowError(
+				/Failed to parse OpenAI response/,
+			);
 		});
 	});
 });

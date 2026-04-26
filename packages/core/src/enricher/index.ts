@@ -33,7 +33,9 @@ export async function enrichSpec(
 				"options",
 				"head",
 			]) {
-				const operation = (pathItem as Record<string, Record<string, unknown>>)[method];
+				const operation = (pathItem as Record<string, Record<string, unknown>>)[
+					method
+				];
 				if (operation) {
 					if (!operation.summary || !operation.description) {
 						missingItems.push({
@@ -87,7 +89,12 @@ export async function enrichSpec(
 	const llm = createLLMProvider(options.provider, options.apiKey);
 	const enrichedItems = await llm.enrichBatch(missingItems, options.lang);
 
-	const resultsForLog: { id: string; path: string; summary?: string; description?: string }[] = [];
+	const resultsForLog: {
+		id: string;
+		path: string;
+		summary?: string;
+		description?: string;
+	}[] = [];
 	let count = 0;
 
 	// 4. Merge results back into the spec
@@ -102,10 +109,9 @@ export async function enrichSpec(
 			const method = parts[1];
 			const pathStr = parts.slice(2).join(":"); // in case path has colons
 
-			const operation = (spec.paths as Record<
-				string,
-				Record<string, Record<string, string>>
-			>)?.[pathStr]?.[method];
+			const operation = (
+				spec.paths as Record<string, Record<string, Record<string, string>>>
+			)?.[pathStr]?.[method];
 			if (operation) {
 				if (!operation.summary && item.summary) {
 					operation.summary = item.summary;
@@ -120,10 +126,9 @@ export async function enrichSpec(
 			}
 		} else if (item.id.startsWith("schema:")) {
 			const schemaName = item.id.split(":")[1];
-			const schemaObj = (spec.components?.schemas as Record<
-				string,
-				Record<string, string>
-			>)?.[schemaName];
+			const schemaObj = (
+				spec.components?.schemas as Record<string, Record<string, string>>
+			)?.[schemaName];
 			if (schemaObj) {
 				if (!schemaObj.description && item.description) {
 					schemaObj.description = item.description;
