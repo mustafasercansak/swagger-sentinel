@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { compareSpecs } from "../../src/comparator/index.js";
-import type { OpenAPISpec } from "../../src/types.js";
+import {
+	compareSpecs,
+	detectBreakingChanges,
+} from "../../src/comparator/index.js";
+import type { OpenAPIPathItem, OpenAPISpec } from "../../src/types.js";
 
-function spec(paths: Record<string, unknown>): OpenAPISpec {
+function spec(paths: Record<string, OpenAPIPathItem>): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
 		info: { title: "Test", version: "1.0.0" },
@@ -21,8 +24,10 @@ describe("comparator", () => {
 	});
 
 	it("detects removed method", () => {
-		const oldSpec = spec({ "/pets": { get: {}, post: {} } });
-		const newSpec = spec({ "/pets": { get: {} } });
+		const oldSpec = spec({
+			"/pets": { get: { responses: {} }, post: { responses: {} } },
+		});
+		const newSpec = spec({ "/pets": { get: { responses: {} } } });
 		const changes = compareSpecs(oldSpec, newSpec);
 		expect(changes).toContainEqual(
 			expect.objectContaining({
@@ -35,7 +40,7 @@ describe("comparator", () => {
 
 	it("detects added path as non-breaking", () => {
 		const oldSpec = spec({});
-		const newSpec = spec({ "/pets": { get: {} } });
+		const newSpec = spec({ "/pets": { get: { responses: {} } } });
 		const changes = compareSpecs(oldSpec, newSpec);
 		expect(changes).toContainEqual(
 			expect.objectContaining({ id: "PATH_ADDED", type: "non-breaking" }),
@@ -129,5 +134,38 @@ describe("comparator", () => {
 				type: "informative",
 			}),
 		);
+	});
+
+	it("recommends major bump when breaking changes exist", () => {
+		const oldSpec = spec({ "/pets": { get: { responses: {} } } });
+		const newSpec = spec({});
+		const report = detectBreakingChanges(oldSpec, newSpec);
+
+		expect(report.hasBreakingChanges).toBe(true);
+		expect(report.recommendedVersionBump).toBe("major");
+	});
+
+	it("recommends minor bump for additive changes only", () => {
+		const oldSpec = spec({});
+		const newSpec = spec({ "/pets": { get: { responses: {} } } });
+		const report = detectBreakingChanges(oldSpec, newSpec);
+
+		expect(report.hasBreakingChanges).toBe(false);
+		expect(report.recommendedVersionBump).toBe("minor");
+	});
+
+	it("recommends patch bump for informative-only changes", () => {
+		const oldSpec = spec({
+			"/pets": { get: { operationId: "old", responses: {} } },
+		});
+		const newSpec = spec({
+			"/pets": { get: { operationId: "new", responses: {} } },
+		});
+		const report = detectBreakingChanges(oldSpec, newSpec);
+
+		expect(report.breakingChanges).toHaveLength(0);
+		expect(report.nonBreakingChanges).toHaveLength(0);
+		expect(report.informativeChanges).toHaveLength(1);
+		expect(report.recommendedVersionBump).toBe("patch");
 	});
 });

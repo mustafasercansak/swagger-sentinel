@@ -12,7 +12,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   x-logo:
-    url: ./assets/logo.png
+    url: ./assets/logo-versioned.png
     altText: Swagger Sentinel Logo
 externalDocs:
   description: Find more info here

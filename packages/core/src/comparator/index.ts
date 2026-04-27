@@ -5,12 +5,22 @@ import type {
 } from "../types.js";
 
 export type DiffType = "breaking" | "non-breaking" | "informative";
+export type SemverBump = "major" | "minor" | "patch" | "none";
 
 export interface DiffChange {
 	id: string;
 	path: string; // e.g., "GET /users"
 	message: string;
 	type: DiffType;
+}
+
+export interface BreakingChangeReport {
+	changes: DiffChange[];
+	breakingChanges: DiffChange[];
+	nonBreakingChanges: DiffChange[];
+	informativeChanges: DiffChange[];
+	hasBreakingChanges: boolean;
+	recommendedVersionBump: SemverBump;
 }
 
 /**
@@ -53,6 +63,43 @@ export function compareSpecs(
 	}
 
 	return changes;
+}
+
+/**
+ * Detect changes between two specs and classify semver impact.
+ */
+export function detectBreakingChanges(
+	oldSpec: OpenAPISpec,
+	newSpec: OpenAPISpec,
+): BreakingChangeReport {
+	const changes = compareSpecs(oldSpec, newSpec);
+	const breakingChanges = changes.filter((c) => c.type === "breaking");
+	const nonBreakingChanges = changes.filter((c) => c.type === "non-breaking");
+	const informativeChanges = changes.filter((c) => c.type === "informative");
+
+	return {
+		changes,
+		breakingChanges,
+		nonBreakingChanges,
+		informativeChanges,
+		hasBreakingChanges: breakingChanges.length > 0,
+		recommendedVersionBump: recommendVersionBump(
+			breakingChanges.length,
+			nonBreakingChanges.length,
+			informativeChanges.length,
+		),
+	};
+}
+
+function recommendVersionBump(
+	breakingCount: number,
+	nonBreakingCount: number,
+	informativeCount: number,
+): SemverBump {
+	if (breakingCount > 0) return "major";
+	if (nonBreakingCount > 0) return "minor";
+	if (informativeCount > 0) return "patch";
+	return "none";
 }
 
 function comparePathItems(

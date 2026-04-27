@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateDocumentation } from "../../src/validators/documentation.js";
 
 function check(results: ValidationResult[], id: string) {
@@ -7,8 +7,8 @@ function check(results: ValidationResult[], id: string) {
 }
 
 function spec(
-	paths: Record<string, unknown>,
-	extra: Record<string, unknown> = {},
+	paths: OpenAPISpec["paths"],
+	extra: Partial<OpenAPISpec> = {},
 ): OpenAPISpec {
 	return Object.assign(
 		{ openapi: "3.0.3", info: { title: "T", version: "1.0.0" }, paths },
@@ -168,6 +168,39 @@ describe("validateDocumentation", () => {
 		expect(check(validateDocumentation(s), "DOC117")?.passed).toBe(false);
 	});
 
+	it("DOC117 passes when response example is provided via $ref component", () => {
+		const s = spec(
+			{
+				"/items": {
+					get: {
+						responses: {
+							"200": {
+								description: "ok",
+								$ref: "#/components/responses/ItemsResponse",
+							},
+						},
+					},
+				},
+			},
+			{
+				components: {
+					responses: {
+						ItemsResponse: {
+							description: "ok",
+							content: {
+								"application/json": {
+									example: [{ id: "1" }],
+									schema: { type: "array", items: { type: "object" } },
+								},
+							},
+						},
+					},
+				},
+			},
+		);
+		expect(check(validateDocumentation(s), "DOC117")?.passed).toBe(true);
+	});
+
 	// DOC118 request body examples
 	it("DOC118 passes when request body has example", () => {
 		const s = spec({
@@ -200,6 +233,37 @@ describe("validateDocumentation", () => {
 			},
 		});
 		expect(check(validateDocumentation(s), "DOC118")?.passed).toBe(false);
+	});
+
+	it("DOC118 passes when requestBody example is provided via $ref component", () => {
+		const s = spec(
+			{
+				"/items": {
+					post: {
+						requestBody: {
+							$ref: "#/components/requestBodies/CreateItem",
+							content: {},
+						},
+						responses: {},
+					},
+				},
+			},
+			{
+				components: {
+					requestBodies: {
+						CreateItem: {
+							required: true,
+							content: {
+								"application/json": {
+									schema: { type: "object", example: { name: "Widget" } },
+								},
+							},
+						},
+					},
+				},
+			},
+		);
+		expect(check(validateDocumentation(s), "DOC118")?.passed).toBe(true);
 	});
 
 	// DOC119 API info block has detailed description

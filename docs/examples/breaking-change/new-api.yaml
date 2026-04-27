@@ -1,0 +1,53 @@
+openapi: 3.0.3
+info:
+  title: Breaking Change Demo API
+  version: 2.0.0
+paths:
+  /pets:
+    get:
+      operationId: pets_list_v2
+      summary: List pets
+      parameters:
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pet'
+  /health:
+    get:
+      operationId: health_check
+      summary: Health endpoint
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+components:
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string

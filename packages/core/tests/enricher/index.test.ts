@@ -106,10 +106,10 @@ describe("AI Enricher", () => {
 	});
 
 	it("should handle missing paths and components objects gracefully", async () => {
-		const spec: OpenAPISpec = {
+		const spec = {
 			openapi: "3.0.0",
 			info: { title: "Test", version: "1.0.0" },
-		};
+		} as unknown as OpenAPISpec;
 
 		const result = await enrichSpec(spec, {
 			provider: "gemini",

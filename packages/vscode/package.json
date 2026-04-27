@@ -2,7 +2,7 @@
 	"name": "swagger-sentinel-vscode",
 	"displayName": "Swagger Sentinel",
 	"description": "Real-time OpenAPI 3.x validation, diagnostics and test generation for VS Code",
-	"version": "1.1.0",
+	"version": "1.1.2",
 	"publisher": "mustafasercansak",
 	"license": "MIT",
 	"engines": {
@@ -20,7 +20,7 @@
 		"api",
 		"yaml"
 	],
-	"icon": "assets/logo.png",
+	"icon": "assets/logo-versioned.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/mustafasercansak/swagger-sentinel"

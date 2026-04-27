@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" width="200" alt="Swagger Sentinel Logo">
+  <img src="assets/logo-versioned.png" width="200" alt="Swagger Sentinel Logo">
 </p>
 
 # swagger-sentinel
@@ -113,6 +113,49 @@ Re-validate on every file change:
 swagger-sentinel watch your-api.yaml
 swagger-sentinel watch your-api.yaml --strict
 ```
+
+### Breaking Change Detector
+
+Compare two versions of a spec and detect breaking changes with a semver bump recommendation:
+
+```bash
+swagger-sentinel breaking old-api.yaml new-api.yaml
+swagger-sentinel diff old-api.yaml new-api.yaml                 # alias
+swagger-sentinel breaking old-api.yaml new-api.yaml --format json
+swagger-sentinel breaking old-api.yaml new-api.yaml --fail-on any
+swagger-sentinel breaking old-api.yaml new-api.yaml --summary breaking-summary.md
+swagger-sentinel breaking old-api.yaml new-api.yaml --risk-high-threshold 25 --risk-medium-threshold 10
+```
+
+**`--fail-on` values:**
+
+- **`breaking`** (default): Exit non-zero only when breaking changes are found.
+- **`any`**: Exit non-zero when any change is detected.
+- **`none`**: Always exit zero (reporting mode only).
+
+**Risk score tuning:**
+
+- Defaults: `breaking=10`, `non-breaking=3`, `informative=1`, `high=15`, `medium=6`
+- Override weights: `--risk-breaking-weight`, `--risk-non-breaking-weight`, `--risk-informative-weight`
+- Override thresholds: `--risk-high-threshold`, `--risk-medium-threshold`
+
+#### Example: Old vs New Spec
+
+To help teams quickly understand the output categories, use the example files in this repo:
+
+```bash
+swagger-sentinel breaking \
+  docs/examples/breaking-change/old-api.yaml \
+  docs/examples/breaking-change/new-api.yaml \
+  --summary docs/examples/breaking-change/report.md
+```
+
+This example intentionally includes all three change types:
+
+- **Breaking**: `GET /pets` parameter `limit` became required.
+- **Breaking**: `GET /pets/{petId}` endpoint was removed.
+- **Non-breaking**: `GET /health` endpoint was added.
+- **Informative**: `operationId` changed from `pets_list` to `pets_list_v2`.
 
 ### Utilities
 
@@ -232,6 +275,10 @@ jobs:
 
 The `--github-annotations` flag will automatically highlight issues on the exact lines of your YAML file in the GitHub PR view.
 
+For a ready-to-run comparison demo, see [docs/examples/breaking-change/README.md](docs/examples/breaking-change/README.md).
+
+This repository also includes a PR template with a breaking-check section at [.github/pull_request_template.md](.github/pull_request_template.md).
+
 ## Custom Rules
 
 You can extend **swagger-sentinel** with your own domain-specific rules. Create a directory (e.g., `./sentinel-rules`) and add `.js` or `.mjs` files:
@@ -277,6 +324,7 @@ If you are contributing to **swagger-sentinel**, use the following scripts:
 - **`npm run build`**: Compiles TypeScript (important for updating the `dist/` binary used by `npx`).
 - **`npm run validate <file>`**: Runs the validator directly from source (using `tsx`).
 - **`npm test`**: Runs the Vitest suite.
+- **`npm run test:coverage`**: Runs tests with coverage thresholds (CI gate).
 - **`npm run build:watch`**: Automatically recompiles on every file change.
 
 > [!IMPORTANT]

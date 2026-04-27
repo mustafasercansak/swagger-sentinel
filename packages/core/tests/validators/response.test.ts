@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateResponses } from "../../src/validators/response.js";
 
 function check(results: ValidationResult[], id: string) {
@@ -7,8 +7,8 @@ function check(results: ValidationResult[], id: string) {
 }
 
 function spec(
-	paths: Record<string, unknown>,
-	components: Record<string, unknown> = {},
+	paths: OpenAPISpec["paths"],
+	components: OpenAPISpec["components"] = {},
 ): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
@@ -26,6 +26,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Error" },
@@ -39,6 +40,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Error" },
@@ -58,6 +60,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Err1" },
@@ -71,6 +74,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Err2" },
@@ -84,6 +88,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Err3" },
@@ -172,6 +177,34 @@ describe("validateResponses", () => {
 		expect(check(validateResponses(s), "R75")?.passed).toBe(false);
 	});
 
+	it("R75 passes when 429 response is a $ref with rate-limit headers", () => {
+		const s = spec(
+			{
+				"/items": {
+					get: {
+						responses: {
+							"429": {
+								description: "too many",
+								$ref: "#/components/responses/TooManyRequests",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					TooManyRequests: {
+						description: "too many",
+						headers: {
+							"X-RateLimit-Limit": { schema: { type: "integer" } },
+						},
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R75")?.passed).toBe(true);
+	});
+
 	// R77 201 includes Location header
 	it("R77 passes when 201 has Location header", () => {
 		const s = spec({
@@ -195,6 +228,32 @@ describe("validateResponses", () => {
 		});
 		expect(check(validateResponses(s), "R77")?.passed).toBe(false);
 		expect(check(validateResponses(s), "R77")?.severity).toBe("suggestion");
+	});
+
+	it("R77 passes when 201 response is a $ref with Location header", () => {
+		const s = spec(
+			{
+				"/items": {
+					post: {
+						responses: {
+							"201": {
+								description: "created",
+								$ref: "#/components/responses/CreatedResponse",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					CreatedResponse: {
+						description: "created",
+						headers: { Location: { schema: { type: "string" } } },
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R77")?.passed).toBe(true);
 	});
 
 	// R78 list responses have total count
@@ -235,6 +294,37 @@ describe("validateResponses", () => {
 		expect(check(validateResponses(s), "R78")?.passed).toBe(false);
 	});
 
+	it("R78 passes when array response is a $ref with x-total-count header", () => {
+		const s = spec(
+			{
+				"/items": {
+					get: {
+						responses: {
+							"200": {
+								description: "ok",
+								$ref: "#/components/responses/ListResponse",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					ListResponse: {
+						description: "ok",
+						content: {
+							"application/json": {
+								schema: { type: "array", items: {} },
+							},
+						},
+						headers: { "X-Total-Count": { schema: { type: "integer" } } },
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R78")?.passed).toBe(true);
+	});
+
 	// R79 single-resource GET has ETag
 	it("R79 passes when single resource GET has ETag header", () => {
 		const s = spec({
@@ -269,6 +359,35 @@ describe("validateResponses", () => {
 		expect(check(validateResponses(s), "R79")?.passed).toBe(false);
 	});
 
+	it("R79 passes when single resource GET is a $ref with Last-Modified header", () => {
+		const s = spec(
+			{
+				"/items/{id}": {
+					get: {
+						responses: {
+							"200": {
+								description: "ok",
+								$ref: "#/components/responses/SingleResponse",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					SingleResponse: {
+						description: "ok",
+						content: {
+							"application/json": { schema: { type: "object" } },
+						},
+						headers: { "Last-Modified": { schema: { type: "string" } } },
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R79")?.passed).toBe(true);
+	});
+
 	// R80 406 Not Acceptable defined for multiple content types
 	it("R80 passes when multiple content types and 406 defined", () => {
 		const s = spec({
@@ -276,7 +395,11 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"200": {
-							content: { "application/json": {}, "application/xml": {} },
+							description: "ok",
+							content: {
+								"application/json": { schema: { type: "object" } },
+								"application/xml": { schema: { type: "object" } },
+							},
 						},
 						"406": { description: "not acceptable" },
 					},
@@ -292,7 +415,11 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"200": {
-							content: { "application/json": {}, "application/xml": {} },
+							description: "ok",
+							content: {
+								"application/json": { schema: { type: "object" } },
+								"application/xml": { schema: { type: "object" } },
+							},
 						},
 					},
 				},
@@ -306,7 +433,9 @@ describe("validateResponses", () => {
 		const s = spec({
 			"/items": {
 				post: {
-					requestBody: { content: { "application/json": {} } },
+					requestBody: {
+						content: { "application/json": { schema: { type: "object" } } },
+					},
 					responses: { "415": { description: "unsupported" } },
 				},
 			},
@@ -318,7 +447,9 @@ describe("validateResponses", () => {
 		const s = spec({
 			"/items": {
 				post: {
-					requestBody: { content: { "application/json": {} } },
+					requestBody: {
+						content: { "application/json": { schema: { type: "object" } } },
+					},
 					responses: { "201": { description: "created" } },
 				},
 			},

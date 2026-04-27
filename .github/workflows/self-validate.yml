@@ -32,6 +32,31 @@ jobs:
           echo "Warnings: ${{ steps.sentinel.outputs.warnings }}"
           echo "Total   : ${{ steps.sentinel.outputs.total }}"
 
+  breaking-detector-demo:
+    name: Run breaking detector demo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm install
+
+      - name: Generate breaking summary from example specs
+        run: |
+          npx tsx packages/core/src/cli.ts breaking \
+            docs/examples/breaking-change/old-api.yaml \
+            docs/examples/breaking-change/new-api.yaml \
+            --summary docs/examples/breaking-change/report.md \
+            --fail-on none
+
+      - name: Publish breaking summary
+        if: always()
+        run: cat docs/examples/breaking-change/report.md >> $GITHUB_STEP_SUMMARY
+
   unit-tests:
     name: Run tests & checks
     runs-on: ubuntu-latest
@@ -46,7 +71,20 @@ jobs:
       - run: npm install
       - run: npm run lint
       - run: npm run type-check
-      - run: npm test -- --coverage
+      - run: npm run test:coverage
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          node -e "const fs=require('node:fs'); const p='packages/core/coverage/coverage-summary.json'; if(!fs.existsSync(p)){console.log('Coverage summary not found:', p); process.exit(0);} const s=JSON.parse(fs.readFileSync(p,'utf8')).total; const pct=(v)=>typeof v?.pct==='number'?v.pct.toFixed(2):'0.00'; console.log('## Coverage Summary'); console.log(''); console.log('| Metric | Percent |'); console.log('|---|---:|'); console.log(`| Lines | ${pct(s.lines)}% |`); console.log(`| Functions | ${pct(s.functions)}% |`); console.log(`| Branches | ${pct(s.branches)}% |`); console.log(`| Statements | ${pct(s.statements)}% |`);" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-coverage-html
+          path: packages/core/coverage
+          if-no-files-found: ignore
 
   publish-npm:
     name: Publish to NPM
