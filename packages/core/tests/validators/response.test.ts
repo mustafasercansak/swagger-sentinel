@@ -177,6 +177,34 @@ describe("validateResponses", () => {
 		expect(check(validateResponses(s), "R75")?.passed).toBe(false);
 	});
 
+	it("R75 passes when 429 response is a $ref with rate-limit headers", () => {
+		const s = spec(
+			{
+				"/items": {
+					get: {
+						responses: {
+							"429": {
+								description: "too many",
+								$ref: "#/components/responses/TooManyRequests",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					TooManyRequests: {
+						description: "too many",
+						headers: {
+							"X-RateLimit-Limit": { schema: { type: "integer" } },
+						},
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R75")?.passed).toBe(true);
+	});
+
 	// R77 201 includes Location header
 	it("R77 passes when 201 has Location header", () => {
 		const s = spec({
@@ -200,6 +228,32 @@ describe("validateResponses", () => {
 		});
 		expect(check(validateResponses(s), "R77")?.passed).toBe(false);
 		expect(check(validateResponses(s), "R77")?.severity).toBe("suggestion");
+	});
+
+	it("R77 passes when 201 response is a $ref with Location header", () => {
+		const s = spec(
+			{
+				"/items": {
+					post: {
+						responses: {
+							"201": {
+								description: "created",
+								$ref: "#/components/responses/CreatedResponse",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					CreatedResponse: {
+						description: "created",
+						headers: { Location: { schema: { type: "string" } } },
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R77")?.passed).toBe(true);
 	});
 
 	// R78 list responses have total count
@@ -240,6 +294,37 @@ describe("validateResponses", () => {
 		expect(check(validateResponses(s), "R78")?.passed).toBe(false);
 	});
 
+	it("R78 passes when array response is a $ref with x-total-count header", () => {
+		const s = spec(
+			{
+				"/items": {
+					get: {
+						responses: {
+							"200": {
+								description: "ok",
+								$ref: "#/components/responses/ListResponse",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					ListResponse: {
+						description: "ok",
+						content: {
+							"application/json": {
+								schema: { type: "array", items: {} },
+							},
+						},
+						headers: { "X-Total-Count": { schema: { type: "integer" } } },
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R78")?.passed).toBe(true);
+	});
+
 	// R79 single-resource GET has ETag
 	it("R79 passes when single resource GET has ETag header", () => {
 		const s = spec({
@@ -272,6 +357,35 @@ describe("validateResponses", () => {
 			},
 		});
 		expect(check(validateResponses(s), "R79")?.passed).toBe(false);
+	});
+
+	it("R79 passes when single resource GET is a $ref with Last-Modified header", () => {
+		const s = spec(
+			{
+				"/items/{id}": {
+					get: {
+						responses: {
+							"200": {
+								description: "ok",
+								$ref: "#/components/responses/SingleResponse",
+							},
+						},
+					},
+				},
+			},
+			{
+				responses: {
+					SingleResponse: {
+						description: "ok",
+						content: {
+							"application/json": { schema: { type: "object" } },
+						},
+						headers: { "Last-Modified": { schema: { type: "string" } } },
+					},
+				},
+			},
+		);
+		expect(check(validateResponses(s), "R79")?.passed).toBe(true);
 	});
 
 	// R80 406 Not Acceptable defined for multiple content types
