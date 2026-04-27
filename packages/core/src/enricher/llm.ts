@@ -1,6 +1,27 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { EnrichedItem, LLMProvider, MissingItem } from "./types.js";
 
+interface OpenAIChatCompletionResponse {
+	choices?: Array<{
+		message?: {
+			content?: string;
+		};
+	}>;
+}
+
+function getOpenAIMessageContent(payload: unknown): string {
+	const data = payload as OpenAIChatCompletionResponse;
+	const content = data.choices?.[0]?.message?.content;
+
+	if (typeof content !== "string") {
+		throw new Error(
+			"OpenAI API error: response payload did not include content",
+		);
+	}
+
+	return content;
+}
+
 function getPrompt(items: MissingItem[], lang: string): string {
 	const languageStr = lang.toLowerCase() === "tr" ? "Turkish" : "English";
 	return `You are an expert API designer. I have a list of OpenAPI operations and schemas that are missing their 'summary' and 'description' fields.
@@ -98,8 +119,7 @@ export class OpenAIProvider implements LLMProvider {
 			throw new Error(`OpenAI API error: ${response.status} ${error}`);
 		}
 
-		const data = (await response.json()) as any;
-		const content = data.choices[0].message.content;
+		const content = getOpenAIMessageContent(await response.json());
 
 		const cleanResponse = content
 			.replace(/^```json/m, "")

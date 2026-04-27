@@ -24,7 +24,15 @@ describe("formatter.ts", () => {
 	});
 
 	it("should format for JSON with summary", () => {
-		const formatted = formatResults(results, "json");
+		const formatted = formatResults(results, "json") as {
+			summary: {
+				total: number;
+				passed: number;
+				failed: number;
+				errors: number;
+			};
+			results: Array<{ id: string }>;
+		};
 		expect(formatted.summary.total).toBe(2);
 		expect(formatted.summary.passed).toBe(1);
 		expect(formatted.summary.failed).toBe(1);

@@ -172,6 +172,107 @@ paths:
 		expect(exitSpy).toHaveBeenCalledWith(1);
 	});
 
+	it("should run breaking command in json format", async () => {
+		await run([
+			"node",
+			"cli.js",
+			"breaking",
+			"tests/sample-spec.yaml",
+			V2_SPEC_PATH,
+			"--format",
+			"json",
+		]);
+		expect(logSpy).toHaveBeenCalledWith(
+			expect.stringContaining("recommendedVersionBump"),
+		);
+		expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('"risk"'));
+	});
+
+	it("should fail on any change when fail-on is any", async () => {
+		await run([
+			"node",
+			"cli.js",
+			"breaking",
+			"tests/sample-spec.yaml",
+			V2_SPEC_PATH,
+			"--fail-on",
+			"any",
+		]);
+
+		expect(exitSpy).toHaveBeenCalledWith(1);
+	});
+
+	it("should not fail when fail-on is none", async () => {
+		await run([
+			"node",
+			"cli.js",
+			"breaking",
+			"tests/sample-spec.yaml",
+			V2_SPEC_PATH,
+			"--fail-on",
+			"none",
+		]);
+
+		expect(exitSpy).toHaveBeenCalledWith(0);
+	});
+
+	it("should save breaking summary to file", async () => {
+		const writeSpy = vi
+			.spyOn(fs, "writeFileSync")
+			.mockImplementation((_path, _data, _options) => undefined);
+
+		await run([
+			"node",
+			"cli.js",
+			"breaking",
+			"tests/sample-spec.yaml",
+			V2_SPEC_PATH,
+			"--summary",
+			"breaking-summary.md",
+		]);
+
+		expect(writeSpy).toHaveBeenCalledWith(
+			"breaking-summary.md",
+			expect.stringContaining("## Swagger Sentinel Breaking Change Summary"),
+			"utf-8",
+		);
+	});
+
+	it("should allow custom risk thresholds and show low risk", async () => {
+		await run([
+			"node",
+			"cli.js",
+			"breaking",
+			"tests/sample-spec.yaml",
+			V2_SPEC_PATH,
+			"--risk-high-threshold",
+			"999",
+			"--risk-medium-threshold",
+			"500",
+			"--fail-on",
+			"none",
+		]);
+
+		expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Risk score:"));
+		expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("(LOW)"));
+	});
+
+	it("should fail with invalid risk threshold configuration", async () => {
+		await run([
+			"node",
+			"cli.js",
+			"breaking",
+			"tests/sample-spec.yaml",
+			V2_SPEC_PATH,
+			"--risk-high-threshold",
+			"3",
+			"--risk-medium-threshold",
+			"5",
+		]);
+
+		expect(exitSpy).toHaveBeenCalledWith(1);
+	});
+
 	it("should run syntax command", async () => {
 		await run(["node", "cli.js", "syntax", "tests/sample-spec.yaml"]);
 		expect(logSpy).toHaveBeenCalledWith(

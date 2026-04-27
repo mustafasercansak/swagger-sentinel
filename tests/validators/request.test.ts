@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateRequests } from "../../src/validators/request.js";
 
 function check(results: ValidationResult[], id: string) {
@@ -7,8 +7,8 @@ function check(results: ValidationResult[], id: string) {
 }
 
 function spec(
-	paths: Record<string, unknown>,
-	components: Record<string, unknown> = {},
+	paths: OpenAPISpec["paths"],
+	components: OpenAPISpec["components"] = {},
 ): OpenAPISpec {
 	return {
 		openapi: "3.0.3",

@@ -2,9 +2,9 @@
 
 Opinionated OpenAPI 3.x validator and test generator with a 130-point checklist, right in your editor.
 
-![Swagger Sentinel Logo](assets/logo.png)
+![Swagger Sentinel Logo](https://raw.githubusercontent.com/mustafasercansak/swagger-sentinel/main/packages/vscode/assets/logo-versioned.png)
 
-![Swagger Sentinel Demo](assets/vscode-demo.png)
+![Swagger Sentinel Demo](https://raw.githubusercontent.com/mustafasercansak/swagger-sentinel/main/packages/vscode/assets/vscode-demo.png)
 
 Swagger Sentinel brings the power of the 130-point OpenAPI checklist directly to VS Code. It provides real-time feedback, diagnostics, and automated test generation to help you build better APIs.
 
@@ -13,11 +13,11 @@ Swagger Sentinel brings the power of the 130-point OpenAPI checklist directly to
 - **Real-time Linting**: Automatically validates your OpenAPI spec (`.yaml`, `.yml`, `.json`) as you type.
 - **Problem Highlighting**: See errors, warnings, and suggestions directly in the VS Code "Problems" tab and highlighted in your code.
 
-![Validation Features](assets/features.png)
+![Validation Features](https://raw.githubusercontent.com/mustafasercansak/swagger-sentinel/main/packages/vscode/assets/features.png)
 
 - **Smart Test Generation**: Generate Vitest-compatible TypeScript tests with Faker.js integration directly from your spec via the context menu.
 
-![Test Generation](assets/test-gen.png)
+![Test Generation](https://raw.githubusercontent.com/mustafasercansak/swagger-sentinel/main/packages/vscode/assets/test-gen.png)
 - **130-Point Checklist**: Covers Structure, Paths, Operations, Requests, Responses, Security, and Documentation.
 - **AI Documentation Enrichment**: Automatically fill missing summaries and descriptions using Gemini or OpenAI.
 - **Secure Storage**: API keys are stored securely using VS Code's SecretStorage (not in plain text).
@@ -27,7 +27,7 @@ Swagger Sentinel brings the power of the 130-point OpenAPI checklist directly to
 
 Stop writing boring descriptions! Swagger Sentinel can now use AI to analyze your API paths and models to generate high-quality summaries and descriptions in seconds.
 
-![AI Settings](assets/ai-settings.png)
+![AI Settings](https://raw.githubusercontent.com/mustafasercansak/swagger-sentinel/main/packages/vscode/assets/ai-settings.png)
 
 1. Set your API provider in settings (`gemini` or `openai`).
 2. Right-click in your YAML file and select **Swagger Sentinel: AI Enrich Documentation**.

@@ -6,11 +6,11 @@ export default defineConfig({
 		environment: "node",
 		coverage: {
 			provider: "v8",
-			reporter: ["text", "json", "html"],
+			reporter: ["text", "json", "json-summary", "html"],
 			thresholds: {
 				lines: 80,
 				functions: 80,
-				branches: 78,
+				branches: 80,
 				statements: 80,
 			},
 			exclude: ["node_modules/", "dist/", "tests/"],

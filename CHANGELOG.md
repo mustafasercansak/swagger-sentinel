@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.0] - 2026-04-26
+## [1.1.2] - 2026-04-27
+
+### Changed
+- **Version Bump**: Updated package versions to `1.1.2` for `swagger-sentinel` core and `swagger-sentinel-vscode`.
+- **Versioned Branding**: Switched project references from `logo.png` to `logo-versioned.png` where applicable.
+- **Build Automation**: `logo:versioned` now ensures the generated versioned logo is available for both root assets and VS Code extension assets during build.
+
+### Fixed
+- **VS Code Marketplace README Images**: Updated extension README image links to absolute GitHub raw URLs so logo and screenshots render reliably on the Marketplace page.
+
+## [1.1.1] - 2026-04-26
 
 ### Added
 - **AI Documentation Enricher**: A major new feature that uses Google Gemini or OpenAI to automatically generate missing `summary` and `description` fields in OpenAPI specifications.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateRequests } from "../../src/validators/request.js";
 
 function check(results: ValidationResult[], id: string) {
@@ -7,8 +7,8 @@ function check(results: ValidationResult[], id: string) {
 }
 
 function spec(
-	paths: Record<string, unknown>,
-	components: Record<string, unknown> = {},
+	paths: OpenAPISpec["paths"],
+	components: OpenAPISpec["components"] = {},
 ): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
@@ -349,5 +349,57 @@ describe("validateRequests", () => {
 			},
 		);
 		expect(check(validateRequests(s), "R61")?.passed).toBe(false);
+	});
+
+	it("covers requestBody $ref and schema $ref branches", () => {
+		const s = spec(
+			{
+				"/users": {
+					post: {
+						requestBody: { $ref: "#/components/requestBodies/CreateUser" },
+						responses: {},
+					},
+				},
+			},
+			{
+				requestBodies: {
+					CreateUser: {
+						required: true,
+						content: {
+							"application/json": {
+								schema: { $ref: "#/components/schemas/CreateUserBody" },
+							},
+						},
+					},
+				},
+				schemas: {
+					CreateUserBody: {
+						type: "object",
+						properties: {
+							email: { type: "string" },
+							password: { type: "string", example: "secret" },
+							p1: { type: "string" },
+							p2: { type: "string" },
+							p3: { type: "string" },
+							p4: { type: "string" },
+							p5: { type: "string" },
+							p6: { type: "string" },
+							p7: { type: "string" },
+							p8: { type: "string" },
+							p9: { type: "string" },
+							p10: { type: "string" },
+							p11: { type: "string" },
+						},
+					},
+				},
+			},
+		);
+
+		const results = validateRequests(s);
+		expect(check(results, "R50")?.passed).toBe(false);
+		expect(check(results, "R53")?.passed).toBe(false);
+		expect(check(results, "R57")?.passed).toBe(false);
+		expect(check(results, "R60")?.passed).toBe(false);
+		expect(check(results, "R61")?.passed).toBe(false);
 	});
 });

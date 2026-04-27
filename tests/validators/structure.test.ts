@@ -6,7 +6,7 @@ function check(results: ValidationResult[], id: string) {
 	return results.find((r) => r.id === id);
 }
 
-const BASE: Record<string, unknown> = {
+const BASE: OpenAPISpec = {
 	openapi: "3.0.3",
 	info: {
 		title: "Test API",
@@ -17,8 +17,13 @@ const BASE: Record<string, unknown> = {
 	paths: { "/items": { get: { responses: { "200": { description: "ok" } } } } },
 };
 
-function spec(overrides?: Record<string, unknown>): OpenAPISpec {
-	return Object.assign({}, BASE, overrides) as OpenAPISpec;
+function spec(overrides: Partial<OpenAPISpec> = {}): OpenAPISpec {
+	return {
+		...BASE,
+		...overrides,
+		info: { ...BASE.info, ...(overrides.info ?? {}) },
+		paths: overrides.paths ?? BASE.paths,
+	};
 }
 
 describe("validateStructure", () => {
@@ -121,7 +126,14 @@ describe("validateStructure", () => {
 		const s = spec({
 			paths: {
 				"/items": {
-					get: { responses: { "200": { $ref: "#/components/responses/OK" } } },
+					get: {
+						responses: {
+							"200": {
+								description: "ok",
+								$ref: "#/components/responses/OK",
+							},
+						},
+					},
 				},
 			},
 			components: { responses: { OK: { description: "ok" } } },
@@ -134,7 +146,14 @@ describe("validateStructure", () => {
 		const s = spec({
 			paths: {
 				"/items": {
-					get: { responses: { "200": { $ref: "#/components/responses/OK" } } },
+					get: {
+						responses: {
+							"200": {
+								description: "ok",
+								$ref: "#/components/responses/OK",
+							},
+						},
+					},
 				},
 			},
 			components: undefined,

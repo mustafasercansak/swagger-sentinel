@@ -61,7 +61,6 @@ describe("Test Generator Engine", () => {
 		const result = generate(mockSpec, {
 			output: "./tests/gen",
 			baseUrl: "http://api.test",
-			seed: "123",
 		});
 		const petTestFile = result.find((f) => f.name === "pets.test.ts");
 		expect(petTestFile?.content).toContain("setSeed('GET-/pets')");

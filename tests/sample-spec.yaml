@@ -12,7 +12,7 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: https://example.com/terms
   x-logo:
-    url: ../assets/logo.png
+    url: ../assets/logo-versioned.png
     altText: Swagger Sentinel Logo
 
 externalDocs:

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateResponses } from "../../src/validators/response.js";
 
 function check(results: ValidationResult[], id: string) {
@@ -7,8 +7,8 @@ function check(results: ValidationResult[], id: string) {
 }
 
 function spec(
-	paths: Record<string, unknown>,
-	components: Record<string, unknown> = {},
+	paths: OpenAPISpec["paths"],
+	components: OpenAPISpec["components"] = {},
 ): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
@@ -26,6 +26,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Error" },
@@ -39,6 +40,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Error" },
@@ -58,6 +60,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Err1" },
@@ -71,6 +74,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Err2" },
@@ -84,6 +88,7 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"400": {
+							description: "bad request",
 							content: {
 								"application/json": {
 									schema: { $ref: "#/components/schemas/Err3" },
@@ -276,7 +281,11 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"200": {
-							content: { "application/json": {}, "application/xml": {} },
+							description: "ok",
+							content: {
+								"application/json": { schema: { type: "object" } },
+								"application/xml": { schema: { type: "object" } },
+							},
 						},
 						"406": { description: "not acceptable" },
 					},
@@ -292,7 +301,11 @@ describe("validateResponses", () => {
 				get: {
 					responses: {
 						"200": {
-							content: { "application/json": {}, "application/xml": {} },
+							description: "ok",
+							content: {
+								"application/json": { schema: { type: "object" } },
+								"application/xml": { schema: { type: "object" } },
+							},
 						},
 					},
 				},
@@ -306,7 +319,9 @@ describe("validateResponses", () => {
 		const s = spec({
 			"/items": {
 				post: {
-					requestBody: { content: { "application/json": {} } },
+					requestBody: {
+						content: { "application/json": { schema: { type: "object" } } },
+					},
 					responses: { "415": { description: "unsupported" } },
 				},
 			},
@@ -318,7 +333,9 @@ describe("validateResponses", () => {
 		const s = spec({
 			"/items": {
 				post: {
-					requestBody: { content: { "application/json": {} } },
+					requestBody: {
+						content: { "application/json": { schema: { type: "object" } } },
+					},
 					responses: { "201": { description: "created" } },
 				},
 			},

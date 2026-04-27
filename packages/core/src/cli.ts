@@ -5,7 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import { Command } from "commander";
-import { compareSpecs, type DiffChange } from "./comparator/index.js";
+import {
+	type BreakingChangeReport,
+	detectBreakingChanges,
+} from "./comparator/index.js";
 import { generate } from "./generators/index.js";
 import { getRuleExtendedInfo, getRulesByCategory } from "./rules/registry.js";
 import type { ValidationResult } from "./types.js";
@@ -446,12 +449,51 @@ export async function run(args: string[] = process.argv) {
 		});
 
 	// =====================================================
-	// DIFF
+	// BREAKING CHANGE DETECTOR
 	// =====================================================
 	program
-		.command("diff <oldSpec> <newSpec>")
-		.description("Compare two spec versions and report breaking changes")
+		.command("breaking <oldSpec> <newSpec>")
+		.alias("diff")
+		.description("Detect breaking changes between two OpenAPI specs")
 		.option("--format <format>", "Output format: text, json", "text")
+		.option(
+			"--summary <path>",
+			"Save a Markdown summary of breaking analysis to a file",
+		)
+		.option(
+			"--version-label <value>",
+			"Version label rendered in summary branding",
+			pkg.version,
+		)
+		.option(
+			"--no-version-badge",
+			"Do not render the version badge in summary branding",
+		)
+		.option(
+			"--risk-breaking-weight <number>",
+			"Risk score weight for each breaking change",
+		)
+		.option(
+			"--risk-non-breaking-weight <number>",
+			"Risk score weight for each non-breaking change",
+		)
+		.option(
+			"--risk-informative-weight <number>",
+			"Risk score weight for each informative change",
+		)
+		.option(
+			"--risk-high-threshold <number>",
+			"Minimum score for HIGH risk level",
+		)
+		.option(
+			"--risk-medium-threshold <number>",
+			"Minimum score for MEDIUM risk level",
+		)
+		.option(
+			"--fail-on <level>",
+			"Exit with error on: breaking, any, none",
+			"breaking",
+		)
 		.action(
 			async (
 				oldSpecFile: string,
@@ -459,18 +501,37 @@ export async function run(args: string[] = process.argv) {
 				options: Record<string, unknown>,
 			) => {
 				try {
+					const failOn = normalizeFailOnLevel(options.failOn);
+					const riskConfig = parseRiskScoreConfig(options);
 					const oldSpec = await loadSpec(oldSpecFile);
 					const newSpec = await loadSpec(newSpecFile);
-					const changes = compareSpecs(oldSpec, newSpec);
+					const report = detectBreakingChanges(oldSpec, newSpec);
+					const risk = calculateRiskScore(report, riskConfig);
 
 					if (options.format === "json") {
-						console.log(JSON.stringify(changes, null, 2));
+						console.log(JSON.stringify({ ...report, risk }, null, 2));
 					} else {
-						printDiffResults(changes);
+						printDiffResults(report, risk);
 					}
 
-					const hasBreaking = changes.some((c) => c.type === "breaking");
-					process.exit(hasBreaking ? 1 : 0);
+					if (options.summary) {
+						const branding: SummaryBrandingOptions = {
+							includeVersionBadge: options.versionBadge !== false,
+							versionLabel: String(options.versionLabel ?? pkg.version),
+							outputPath: String(options.summary),
+						};
+						const summaryMd = generateBreakingSummary(
+							report,
+							risk,
+							oldSpecFile,
+							newSpecFile,
+							branding,
+						);
+						fs.writeFileSync(options.summary as string, summaryMd, "utf-8");
+						console.log(chalk.cyan(`\n📊 Summary saved to ${options.summary}`));
+					}
+
+					process.exit(shouldFail(report, failOn) ? 1 : 0);
 				} catch (err: unknown) {
 					const error = err as Error;
 					console.error(chalk.red(`\n✗ Error: ${error.message}\n`));
@@ -482,15 +543,49 @@ export async function run(args: string[] = process.argv) {
 	// =====================================================
 	// PRINT HELPERS
 	// =====================================================
-	function printDiffResults(changes: DiffChange[]) {
+	type RiskLevel = "low" | "medium" | "high";
+
+	interface RiskScoreConfig {
+		breakingWeight: number;
+		nonBreakingWeight: number;
+		informativeWeight: number;
+		highThreshold: number;
+		mediumThreshold: number;
+	}
+
+	interface RiskScoreResult {
+		score: number;
+		level: RiskLevel;
+		config: RiskScoreConfig;
+	}
+
+	interface SummaryBrandingOptions {
+		includeVersionBadge: boolean;
+		versionLabel: string;
+		outputPath?: string;
+	}
+
+	const defaultRiskScoreConfig: RiskScoreConfig = {
+		breakingWeight: 10,
+		nonBreakingWeight: 3,
+		informativeWeight: 1,
+		highThreshold: 15,
+		mediumThreshold: 6,
+	};
+
+	function printDiffResults(
+		report: BreakingChangeReport,
+		risk: RiskScoreResult,
+	) {
+		const changes = report.changes;
 		if (changes.length === 0) {
 			console.log(chalk.green("\n✓ No changes detected between specs\n"));
 			return;
 		}
 
-		const breaking = changes.filter((c) => c.type === "breaking");
-		const nonBreaking = changes.filter((c) => c.type === "non-breaking");
-		const informative = changes.filter((c) => c.type === "informative");
+		const breaking = report.breakingChanges;
+		const nonBreaking = report.nonBreakingChanges;
+		const informative = report.informativeChanges;
 
 		console.log(chalk.cyan(`\nFound ${changes.length} change(s):\n`));
 
@@ -535,6 +630,340 @@ export async function run(args: string[] = process.argv) {
 		} else {
 			console.log(chalk.green(`✓ SUCCESS: No breaking changes detected.\n`));
 		}
+
+		console.log(
+			chalk.white(
+				`Recommended version bump: ${report.recommendedVersionBump.toUpperCase()}\n`,
+			),
+		);
+
+		console.log(
+			chalk.white(`Risk score: ${risk.score} (${risk.level.toUpperCase()})\n`),
+		);
+	}
+
+	type FailOnLevel = "breaking" | "any" | "none";
+
+	function normalizeFailOnLevel(level: unknown): FailOnLevel {
+		if (level === "breaking" || level === "any" || level === "none") {
+			return level;
+		}
+		throw new Error(
+			`Invalid --fail-on value: ${String(level)} (expected: breaking, any, none)`,
+		);
+	}
+
+	function shouldFail(
+		report: BreakingChangeReport,
+		level: FailOnLevel,
+	): boolean {
+		if (level === "none") return false;
+		if (level === "any") return report.changes.length > 0;
+		return report.hasBreakingChanges;
+	}
+
+	function parseRiskScoreConfig(
+		options: Record<string, unknown>,
+	): RiskScoreConfig {
+		const config: RiskScoreConfig = {
+			breakingWeight: parseOptionalNumber(
+				options.riskBreakingWeight,
+				"--risk-breaking-weight",
+				defaultRiskScoreConfig.breakingWeight,
+			),
+			nonBreakingWeight: parseOptionalNumber(
+				options.riskNonBreakingWeight,
+				"--risk-non-breaking-weight",
+				defaultRiskScoreConfig.nonBreakingWeight,
+			),
+			informativeWeight: parseOptionalNumber(
+				options.riskInformativeWeight,
+				"--risk-informative-weight",
+				defaultRiskScoreConfig.informativeWeight,
+			),
+			highThreshold: parseOptionalNumber(
+				options.riskHighThreshold,
+				"--risk-high-threshold",
+				defaultRiskScoreConfig.highThreshold,
+			),
+			mediumThreshold: parseOptionalNumber(
+				options.riskMediumThreshold,
+				"--risk-medium-threshold",
+				defaultRiskScoreConfig.mediumThreshold,
+			),
+		};
+
+		if (config.mediumThreshold > config.highThreshold) {
+			throw new Error(
+				"Invalid risk thresholds: --risk-medium-threshold must be <= --risk-high-threshold",
+			);
+		}
+
+		return config;
+	}
+
+	function parseOptionalNumber(
+		value: unknown,
+		optionName: string,
+		fallback: number,
+	): number {
+		if (value === undefined) return fallback;
+
+		const parsed = Number(value);
+		if (!Number.isFinite(parsed) || parsed < 0) {
+			throw new Error(
+				`Invalid ${optionName} value: ${String(value)} (must be a non-negative number)`,
+			);
+		}
+
+		return parsed;
+	}
+
+	function calculateRiskScore(
+		report: BreakingChangeReport,
+		config: RiskScoreConfig,
+	): RiskScoreResult {
+		const score =
+			report.breakingChanges.length * config.breakingWeight +
+			report.nonBreakingChanges.length * config.nonBreakingWeight +
+			report.informativeChanges.length * config.informativeWeight;
+
+		const level: RiskLevel =
+			score >= config.highThreshold
+				? "high"
+				: score >= config.mediumThreshold
+					? "medium"
+					: "low";
+
+		return {
+			score,
+			level,
+			config,
+		};
+	}
+
+	function generateBreakingSummary(
+		report: BreakingChangeReport,
+		risk: RiskScoreResult,
+		oldSpecFile: string,
+		newSpecFile: string,
+		branding: SummaryBrandingOptions,
+	): string {
+		const lines: string[] = [];
+		const generatedAt = new Date().toISOString();
+		const recommendedBump = report.recommendedVersionBump.toUpperCase();
+		const riskLevel = risk.level.toUpperCase();
+
+		const breakingTotal = report.breakingChanges.length;
+		const nonBreakingTotal = report.nonBreakingChanges.length;
+		const informativeTotal = report.informativeChanges.length;
+		const riskGauge = buildRiskGauge(risk.score, risk.config);
+		const riskBadge = buildBadge("Risk", riskLevel, getRiskBadgeColor(risk.level));
+		const releaseDecision =
+			breakingTotal > 0
+				? "BLOCKED"
+				: report.changes.length > 0
+					? "REVIEW"
+					: "READY";
+		const releaseBadge = buildBadge(
+			"Release",
+			releaseDecision,
+			getReleaseBadgeColor(releaseDecision),
+		);
+		const logoPath = buildSummaryLogoPath(branding.outputPath);
+
+		const assessment =
+			breakingTotal > 0
+				? "Breaking changes detected. A MAJOR version bump is recommended before release."
+				: report.changes.length > 0
+					? "No breaking change detected. Review additive and informative changes before release."
+					: "No contract change detected between the compared specs.";
+
+		const releaseRationale =
+			releaseDecision === "BLOCKED"
+				? "Breaking changes were detected. Release should be blocked until migration plan and version bump are approved."
+				: releaseDecision === "REVIEW"
+					? "No breaking changes detected, but API changes exist. Release should proceed after change review."
+					: "No API contract changes detected. Release can proceed without API-related blockers.";
+
+		const escapeTableCell = (value: string) => value.replaceAll("|", "\\|");
+
+		lines.push(
+			`<p align="center"><img src="${logoPath}" width="140" alt="Swagger Sentinel Logo" /></p>`,
+		);
+		if (branding.includeVersionBadge) {
+			lines.push("");
+			lines.push(
+				`![Version](https://img.shields.io/badge/Version-${encodeURIComponent(branding.versionLabel)}-0A7A3F)`,
+			);
+		}
+
+		lines.push("");
+		lines.push("## Swagger Sentinel Breaking Change Summary");
+		lines.push("");
+		lines.push("### Executive Summary");
+		lines.push("");
+		lines.push(assessment);
+		lines.push("");
+		lines.push("### Release Decision");
+		lines.push("");
+		lines.push("| Item | Value |");
+		lines.push("|---|---|");
+		lines.push(`| Release Status | ${releaseBadge} |`);
+		lines.push(`| Risk Status | ${riskBadge} |`);
+		lines.push(`| Recommended Version Bump | ${recommendedBump} |`);
+		lines.push(`| Decision Rationale | ${releaseRationale} |`);
+		lines.push("");
+		lines.push("### Context");
+		lines.push("");
+		lines.push(`- Generated At: ${generatedAt}`);
+		lines.push(`- Old Spec: ${oldSpecFile}`);
+		lines.push(`- New Spec: ${newSpecFile}`);
+		lines.push("");
+		lines.push("### Metrics");
+		lines.push("");
+		lines.push("| Metric | Value |");
+		lines.push("|---|---:|");
+		lines.push(`| Total Changes | ${report.changes.length} |`);
+		lines.push(`| Breaking Changes | ${breakingTotal} |`);
+		lines.push(`| Non-Breaking Changes | ${nonBreakingTotal} |`);
+		lines.push(`| Informative Changes | ${informativeTotal} |`);
+		lines.push(`| Recommended Version Bump | ${recommendedBump} |`);
+		lines.push(`| Risk Score | ${risk.score} |`);
+		lines.push(`| Risk Level | ${riskLevel} (${riskBadge}) |`);
+		lines.push(`| Risk Gauge | ${riskGauge} |`);
+		lines.push("");
+		lines.push("### Visual Snapshot");
+		lines.push("");
+		lines.push("```mermaid");
+		lines.push("pie showData");
+		lines.push('  title Change Distribution');
+		lines.push(`  "Breaking" : ${breakingTotal}`);
+		lines.push(`  "Non-Breaking" : ${nonBreakingTotal}`);
+		lines.push(`  "Informative" : ${informativeTotal}`);
+		lines.push("```");
+		lines.push("");
+		lines.push("### Risk Configuration");
+		lines.push("");
+		lines.push("| Parameter | Value |");
+		lines.push("|---|---:|");
+		lines.push(`| breakingWeight | ${risk.config.breakingWeight} |`);
+		lines.push(`| nonBreakingWeight | ${risk.config.nonBreakingWeight} |`);
+		lines.push(`| informativeWeight | ${risk.config.informativeWeight} |`);
+		lines.push(`| mediumThreshold | ${risk.config.mediumThreshold} |`);
+		lines.push(`| highThreshold | ${risk.config.highThreshold} |`);
+		lines.push("");
+
+		if (breakingTotal > 0) {
+			lines.push("### Breaking Changes");
+			lines.push("");
+			lines.push("| # | Scope | Detail |");
+			lines.push("|---:|---|---|");
+			report.breakingChanges.forEach((change, idx) => {
+				lines.push(
+					`| ${idx + 1} | ${escapeTableCell(change.path)} | ${escapeTableCell(change.message)} |`,
+				);
+			});
+			lines.push("");
+		}
+
+		if (nonBreakingTotal > 0) {
+			lines.push("### Non-Breaking Changes");
+			lines.push("");
+			lines.push("| # | Scope | Detail |");
+			lines.push("|---:|---|---|");
+			report.nonBreakingChanges.forEach((change, idx) => {
+				lines.push(
+					`| ${idx + 1} | ${escapeTableCell(change.path)} | ${escapeTableCell(change.message)} |`,
+				);
+			});
+			lines.push("");
+		}
+
+		if (informativeTotal > 0) {
+			lines.push("### Informative Changes");
+			lines.push("");
+			lines.push("| # | Scope | Detail |");
+			lines.push("|---:|---|---|");
+			report.informativeChanges.forEach((change, idx) => {
+				lines.push(
+					`| ${idx + 1} | ${escapeTableCell(change.path)} | ${escapeTableCell(change.message)} |`,
+				);
+			});
+			lines.push("");
+		}
+
+		lines.push("### Recommended Actions");
+		lines.push("");
+		if (breakingTotal > 0) {
+			lines.push(
+				"- Apply a MAJOR version bump before release and communicate migration notes.",
+			);
+			lines.push(
+				"- Review client impact for removed paths/methods and required request changes.",
+			);
+		}
+		if (nonBreakingTotal > 0) {
+			lines.push(
+				"- Verify additive endpoints and fields are reflected in client SDK and docs.",
+			);
+		}
+		if (informativeTotal > 0) {
+			lines.push(
+				"- Confirm operationId/documentation updates are aligned with tooling expectations.",
+			);
+		}
+		if (report.changes.length === 0) {
+			lines.push("- No action required. Contract is unchanged.");
+		}
+		lines.push("");
+
+		return lines.join("\n");
+	}
+
+	function buildRiskGauge(score: number, config: RiskScoreConfig): string {
+		const size = 18;
+		const safeHighThreshold = Math.max(1, config.highThreshold);
+		const ratioToHigh = score / safeHighThreshold;
+		const clampedRatio = Math.min(1, ratioToHigh);
+		const filled = Math.round(clampedRatio * size);
+		const level =
+			score >= config.highThreshold
+				? "HIGH"
+				: score >= config.mediumThreshold
+					? "MED"
+					: "LOW";
+		const percentOfHigh = Math.round(ratioToHigh * 100);
+
+		return `${level} [${"#".repeat(filled)}${"-".repeat(size - filled)}] ${percentOfHigh}% of HIGH threshold`;
+	}
+
+	function buildBadge(label: string, message: string, color: string): string {
+		const encodedLabel = encodeURIComponent(label);
+		const encodedMessage = encodeURIComponent(message);
+		const encodedColor = encodeURIComponent(color);
+		return `![${label} ${message}](https://img.shields.io/badge/${encodedLabel}-${encodedMessage}-${encodedColor})`;
+	}
+
+	function getRiskBadgeColor(level: RiskLevel): string {
+		if (level === "high") return "red";
+		if (level === "medium") return "orange";
+		return "brightgreen";
+	}
+
+	function getReleaseBadgeColor(decision: "BLOCKED" | "REVIEW" | "READY"): string {
+		if (decision === "BLOCKED") return "red";
+		if (decision === "REVIEW") return "yellow";
+		return "brightgreen";
+	}
+
+	function buildSummaryLogoPath(outputPath?: string): string {
+		if (!outputPath) return "assets/logo-versioned.png";
+
+		const outputDir = path.dirname(path.resolve(outputPath));
+		const logoAbsolutePath = path.resolve(process.cwd(), "assets/logo-versioned.png");
+		const relativePath = path.relative(outputDir, logoAbsolutePath);
+		return relativePath.replaceAll("\\", "/");
 	}
 
 	function printResults(results: ValidationResult[], strict: boolean) {

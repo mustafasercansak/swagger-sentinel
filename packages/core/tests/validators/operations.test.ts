@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ValidationResult } from "../../src/types.js";
+import type { OpenAPISpec, ValidationResult } from "../../src/types.js";
 import { validateOperations } from "../../src/validators/operations.js";
 
 function check(results: ValidationResult[], id: string) {
@@ -7,8 +7,8 @@ function check(results: ValidationResult[], id: string) {
 }
 
 function spec(
-	paths: Record<string, unknown>,
-	extra: Record<string, unknown> = {},
+	paths: OpenAPISpec["paths"],
+	extra: Partial<OpenAPISpec> = {},
 ): OpenAPISpec {
 	return Object.assign(
 		{ openapi: "3.0.3", info: { title: "T", version: "1.0.0" }, paths },
@@ -190,7 +190,9 @@ describe("validateOperations", () => {
 		const s = spec({
 			"/items": {
 				get: {
-					requestBody: { content: { "application/json": {} } },
+					requestBody: {
+						content: { "application/json": { schema: { type: "object" } } },
+					},
 					responses: { "200": { description: "ok" } },
 				},
 			},

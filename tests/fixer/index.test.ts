@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { applyFixes } from "../../src/fixer/index.js";
-import type { OpenAPISpec } from "../../src/types.js";
+import type { OpenAPIPathItem, OpenAPISpec } from "../../src/types.js";
 
-function spec(paths: Record<string, unknown>): OpenAPISpec {
+function spec(paths: Record<string, OpenAPIPathItem>): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
 		info: { title: "Test", version: "1.0.0" },
 		paths,
-	} as unknown as OpenAPISpec;
+	};
 }
 
 describe("fixer", () => {

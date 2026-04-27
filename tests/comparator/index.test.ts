@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { compareSpecs } from "../../src/comparator/index.js";
-import type { OpenAPISpec } from "../../src/types.js";
+import type { OpenAPIPathItem, OpenAPISpec } from "../../src/types.js";
 
-function spec(paths: Record<string, unknown>): OpenAPISpec {
+function spec(paths: Record<string, OpenAPIPathItem>): OpenAPISpec {
 	return {
 		openapi: "3.0.3",
 		info: { title: "Test", version: "1.0.0" },
@@ -21,8 +21,10 @@ describe("comparator", () => {
 	});
 
 	it("detects removed method", () => {
-		const oldSpec = spec({ "/pets": { get: {}, post: {} } });
-		const newSpec = spec({ "/pets": { get: {} } });
+		const oldSpec = spec({
+			"/pets": { get: { responses: {} }, post: { responses: {} } },
+		});
+		const newSpec = spec({ "/pets": { get: { responses: {} } } });
 		const changes = compareSpecs(oldSpec, newSpec);
 		expect(changes).toContainEqual(
 			expect.objectContaining({
@@ -35,7 +37,7 @@ describe("comparator", () => {
 
 	it("detects added path as non-breaking", () => {
 		const oldSpec = spec({});
-		const newSpec = spec({ "/pets": { get: {} } });
+		const newSpec = spec({ "/pets": { get: { responses: {} } } });
 		const changes = compareSpecs(oldSpec, newSpec);
 		expect(changes).toContainEqual(
 			expect.objectContaining({ id: "PATH_ADDED", type: "non-breaking" }),
