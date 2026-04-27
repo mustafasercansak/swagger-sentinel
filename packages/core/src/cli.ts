@@ -758,7 +758,11 @@ export async function run(args: string[] = process.argv) {
 		const nonBreakingTotal = report.nonBreakingChanges.length;
 		const informativeTotal = report.informativeChanges.length;
 		const riskGauge = buildRiskGauge(risk.score, risk.config);
-		const riskBadge = buildBadge("Risk", riskLevel, getRiskBadgeColor(risk.level));
+		const riskBadge = buildBadge(
+			"Risk",
+			riskLevel,
+			getRiskBadgeColor(risk.level),
+		);
 		const releaseDecision =
 			breakingTotal > 0
 				? "BLOCKED"
@@ -837,7 +841,7 @@ export async function run(args: string[] = process.argv) {
 		lines.push("");
 		lines.push("```mermaid");
 		lines.push("pie showData");
-		lines.push('  title Change Distribution');
+		lines.push("  title Change Distribution");
 		lines.push(`  "Breaking" : ${breakingTotal}`);
 		lines.push(`  "Non-Breaking" : ${nonBreakingTotal}`);
 		lines.push(`  "Informative" : ${informativeTotal}`);
@@ -951,7 +955,9 @@ export async function run(args: string[] = process.argv) {
 		return "brightgreen";
 	}
 
-	function getReleaseBadgeColor(decision: "BLOCKED" | "REVIEW" | "READY"): string {
+	function getReleaseBadgeColor(
+		decision: "BLOCKED" | "REVIEW" | "READY",
+	): string {
 		if (decision === "BLOCKED") return "red";
 		if (decision === "REVIEW") return "yellow";
 		return "brightgreen";
@@ -961,7 +967,10 @@ export async function run(args: string[] = process.argv) {
 		if (!outputPath) return "assets/logo-versioned.png";
 
 		const outputDir = path.dirname(path.resolve(outputPath));
-		const logoAbsolutePath = path.resolve(process.cwd(), "assets/logo-versioned.png");
+		const logoAbsolutePath = path.resolve(
+			process.cwd(),
+			"assets/logo-versioned.png",
+		);
 		const relativePath = path.relative(outputDir, logoAbsolutePath);
 		return relativePath.replaceAll("\\", "/");
 	}

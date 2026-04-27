@@ -26,7 +26,10 @@ function readVersion() {
 	for (const packagePath of packageCandidates) {
 		if (!fs.existsSync(packagePath)) continue;
 		const parsed = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-		if (typeof parsed.version === "string" && parsed.version.trim().length > 0) {
+		if (
+			typeof parsed.version === "string" &&
+			parsed.version.trim().length > 0
+		) {
 			return parsed.version.trim();
 		}
 	}
