@@ -240,7 +240,10 @@ describe("validateDocumentation", () => {
 			{
 				"/items": {
 					post: {
-						requestBody: { $ref: "#/components/requestBodies/CreateItem" },
+						requestBody: {
+							$ref: "#/components/requestBodies/CreateItem",
+							content: {},
+						},
 						responses: {},
 					},
 				},

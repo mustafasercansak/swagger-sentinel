@@ -356,7 +356,10 @@ describe("validateRequests", () => {
 			{
 				"/users": {
 					post: {
-						requestBody: { $ref: "#/components/requestBodies/CreateUser" },
+						requestBody: {
+							$ref: "#/components/requestBodies/CreateUser",
+							content: {},
+						},
 						responses: {},
 					},
 				},
